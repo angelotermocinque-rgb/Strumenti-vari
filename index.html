@@ -857,52 +857,78 @@
         </div>
     </div>
 
-    <!-- MODALE DI ANTEPRIMA GRANDISSIMA E MAPPATURA PAGINE PDF -->
+    <!-- MODALE DI ANTEPRIMA E SMISTAMENTO VELOCE PDF -->
     <div id="multiPdfModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:1000; justify-content:center; align-items:center; padding: 1rem;">
-        <div style="background:var(--card-bg); width:100%; max-width:1300px; height:96vh; border-radius:var(--radius); display:flex; flex-direction:column; overflow:hidden; box-shadow: var(--shadow);">
+        <div style="background:var(--card-bg); width:100%; max-width:1400px; height:96vh; border-radius:var(--radius); display:flex; flex-direction:column; overflow:hidden; box-shadow: var(--shadow);">
             
             <!-- Header Modale -->
             <div style="padding: 1rem 1.5rem; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; background: #ffffff;">
-                <h3 style="font-size: 1.25rem; display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-magnifying-glass-plus" style="color:var(--accent-orange);"></i> Anteprima Grandissima & Smistamento Pagine PDF</h3>
+                <h3 style="font-size: 1.25rem; display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-magnifying-glass-plus" style="color:var(--accent-orange);"></i> Smistamento Veloce Pagine PDF</h3>
                 <button onclick="closeMultiPdfModal()" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--text-muted);"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
-            <!-- Info File -->
-            <div style="padding: 0.75rem 1.5rem; background: var(--card-inner-bg); border-bottom: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+            <!-- Info File + contatore assegnazioni -->
+            <div style="padding: 0.75rem 1.5rem; background: var(--card-inner-bg); border-bottom: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
                 <span id="multiPdfInfo" style="font-size: 0.95rem; color: var(--text-main);">Caricamento in corso...</span>
+                <span id="assignCounter" style="font-size: 0.9rem; font-weight:600; color: var(--accent-green);">0 / 0 pagine assegnate</span>
             </div>
 
             <!-- Contenuto: 2 Colonne -->
             <div style="display: flex; flex: 1; overflow: hidden; background: #f1f3f5;">
                 
-                <!-- Colonna Sinistra: Anteprima Pagine Grandi -->
-                <div style="flex: 1.2; padding: 1.25rem; overflow-y: auto; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 1rem;">
-                    <h4 style="font-size: 1rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 0.5rem;">
-                        <i class="fa-solid fa-images"></i> Pagine del Documento (Vista Dettagliata)
+                <!-- Colonna Sinistra: Anteprima Pagine con select sotto ciascuna -->
+                <div style="flex: 1.4; padding: 1.25rem; overflow-y: auto; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.75rem;">
+                    <h4 style="font-size: 1rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                        <i class="fa-solid fa-images"></i> Pagine — scegli la destinazione sotto ciascuna
                     </h4>
-                    <div id="pdfThumbnailsGrid" style="display: flex; flex-direction: column; gap: 1.25rem;">
-                        <!-- Canvas ad alta risoluzione generati via JS -->
+                    <div id="pdfThumbnailsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem;">
+                        <!-- Card pagina generate via JS -->
                     </div>
                 </div>
 
-                <!-- Colonna Destra: Pannello Regole di Smistamento -->
-                <div style="flex: 1; padding: 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; background: #ffffff;">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <h4 style="font-size: 1rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 0.5rem;">
-                            <i class="fa-solid fa-list-check"></i> Regole di Smistamento
-                        </h4>
-                        <button class="btn-action" style="margin:0; width:auto; padding: 0.4rem 0.8rem; font-size:0.85rem; background: var(--accent-cyan);" onclick="addMappingRuleRow()">
-                            <i class="fa-solid fa-plus"></i> Aggiungi Regola
-                        </button>
-                    </div>
+                <!-- Colonna Destra: Assegna intervallo + Riepilogo -->
+                <div style="flex: 0.9; padding: 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.25rem; background: #ffffff;">
                     
-                    <p style="font-size: 0.85rem; color: var(--text-muted);">
-                        Indica il numero della pagina (es. <code>1</code>) o l'intervallo (es. <code>2-3</code>) e seleziona a quale box dell'archivio assegnarlo.
-                    </p>
-
-                    <div id="mappingRulesContainer" style="display:flex; flex-direction:column; gap: 0.75rem;">
-                        <!-- Righe di regole dinamiche -->
+                    <!-- Tool intervallo veloce -->
+                    <div style="background: var(--card-inner-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem;">
+                        <h4 style="font-size: 0.95rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                            <i class="fa-solid fa-bolt"></i> Assegna intervallo in un click
+                        </h4>
+                        <div style="display:flex; gap:0.5rem; align-items:flex-end; flex-wrap:wrap;">
+                            <div style="flex:1; min-width:70px;">
+                                <label style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:0.2rem;">Da pag.</label>
+                                <input type="number" id="rangeFrom" min="1" value="1" style="padding:0.45rem; font-size:0.9rem; width:100%;">
+                            </div>
+                            <div style="flex:1; min-width:70px;">
+                                <label style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:0.2rem;">A pag.</label>
+                                <input type="number" id="rangeTo" min="1" value="1" style="padding:0.45rem; font-size:0.9rem; width:100%;">
+                            </div>
+                            <div style="flex:2; min-width:140px;">
+                                <label style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:0.2rem;">Box destinazione</label>
+                                <select id="rangeTarget" style="padding:0.45rem; font-size:0.9rem; width:100%;">
+                                    <option value="">-- Seleziona --</option>
+                                </select>
+                            </div>
+                            <button class="btn-action" style="margin:0; width:auto; padding:0.5rem 0.9rem; font-size:0.85rem;" onclick="applyRangeAssignment()">
+                                <i class="fa-solid fa-check"></i> Applica
+                            </button>
+                        </div>
+                        <p style="font-size:0.78rem; color:var(--text-muted); margin-top:0.6rem;">Esempio: Da 1 a 2 → Documento di identità, Da 3 a 4 → Tessera sanitaria</p>
                     </div>
+
+                    <!-- Riepilogo live -->
+                    <div>
+                        <h4 style="font-size: 0.95rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                            <i class="fa-solid fa-list-check"></i> Riepilogo assegnazioni
+                        </h4>
+                        <div id="assignmentSummary" style="display:flex; flex-direction:column; gap:0.5rem; font-size:0.9rem;">
+                            <p style="color:var(--text-muted); font-size:0.85rem;">Nessuna pagina assegnata. Usa i menu sotto le pagine o lo strumento intervallo.</p>
+                        </div>
+                    </div>
+
+                    <button onclick="clearAllAssignments()" style="background:none; border:1px solid var(--border-color); color:var(--text-muted); padding:0.45rem 0.8rem; border-radius:6px; cursor:pointer; font-size:0.85rem; align-self:flex-start;">
+                        <i class="fa-solid fa-eraser"></i> Azzera tutte le assegnazioni
+                    </button>
                 </div>
 
             </div>
@@ -910,7 +936,9 @@
             <!-- Footer Modale -->
             <div style="padding: 1rem 1.5rem; border-top:1px solid var(--border-color); display:flex; justify-content:flex-end; gap: 1rem; background: var(--card-inner-bg);">
                 <button class="btn-action" style="margin:0; width:auto; background:#6c757d; padding: 0.6rem 1.2rem;" onclick="closeMultiPdfModal()">Annulla</button>
-                <button class="btn-action" style="margin:0; width:auto; padding: 0.6rem 1.8rem;" onclick="executePdfSplitting()">Conferma e Smista nei Box</button>
+                <button class="btn-action" style="margin:0; width:auto; padding: 0.6rem 1.8rem;" onclick="executePdfSplitting()">
+                    <i class="fa-solid fa-check-double"></i> Conferma e Smista nei Box
+                </button>
             </div>
         </div>
     </div>
@@ -1075,12 +1103,14 @@
             }
         }
 
-        // --- GESTIONE SMISTAMENTO MULTI-PAGINA CON ANTEPRIMA GRANDISSIMA ---
+        // --- GESTIONE SMISTAMENTO MULTI-PAGINA VELOCE ---
         let loadedMasterPdfDoc = null;
         let masterPdfArrayBuffer = null;
         let masterFileName = "";
         let totalPdfPages = 0;
         let pdfJsDocInstance = null;
+        // pageAssignments: chiave = numero pagina (1-based), valore = boxId (string) oppure ""
+        let pageAssignments = {};
 
         function handleMultiPDFSelect(event) {
             const file = event.target.files[0];
@@ -1097,6 +1127,7 @@
         async function processMasterPdfFile(file) {
             masterFileName = file.name;
             masterPdfArrayBuffer = await file.arrayBuffer();
+            pageAssignments = {};
             
             try {
                 loadedMasterPdfDoc = await PDFLib.PDFDocument.load(masterPdfArrayBuffer);
@@ -1108,14 +1139,30 @@
                 document.getElementById('multiPdfInfo').innerHTML = `File: <strong>${masterFileName}</strong> (Totale Pagine: <strong>${totalPdfPages}</strong>)`;
                 document.getElementById('multiPdfModal').style.display = 'flex';
 
+                // Popola select intervallo
+                const rangeSelect = document.getElementById('rangeTarget');
+                rangeSelect.innerHTML = '<option value="">-- Seleziona --</option>' + 
+                    docNames.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+                document.getElementById('rangeFrom').value = 1;
+                document.getElementById('rangeTo').value = Math.min(2, totalPdfPages);
+                document.getElementById('rangeFrom').max = totalPdfPages;
+                document.getElementById('rangeTo').max = totalPdfPages;
+
                 await renderLargePdfThumbnails();
-                
-                document.getElementById('mappingRulesContainer').innerHTML = '';
-                addMappingRuleRow();
+                updateAssignmentSummary();
             } catch (err) {
                 alert("Errore nella lettura del file PDF.");
                 console.error(err);
             }
+        }
+
+        function getBoxOptionsHtml(selectedId) {
+            let html = '<option value="">— Non assegnata —</option>';
+            docNames.forEach(d => {
+                const sel = (String(selectedId) === String(d.id)) ? ' selected' : '';
+                html += `<option value="${d.id}"${sel}>${d.name}</option>`;
+            });
+            return html;
         }
 
         async function renderLargePdfThumbnails() {
@@ -1124,22 +1171,48 @@
 
             for (let i = 1; i <= totalPdfPages; i++) {
                 const wrapper = document.createElement('div');
-                wrapper.style.cssText = "background:#ffffff; border:1px solid var(--border-color); border-radius:8px; padding:0.75rem; box-shadow: 0 2px 6px rgba(0,0,0,0.05); display:flex; flex-direction:column; align-items:center; gap:0.5rem;";
+                wrapper.className = 'page-card';
+                wrapper.dataset.page = i;
+                wrapper.style.cssText = "background:#ffffff; border:2px solid var(--border-color); border-radius:8px; padding:0.6rem; box-shadow: 0 2px 6px rgba(0,0,0,0.05); display:flex; flex-direction:column; gap:0.4rem; transition: border-color 0.2s;";
                 
                 const label = document.createElement('div');
-                label.style.cssText = "font-size:0.95rem; font-weight:700; color:var(--accent-orange); width:100%; text-align:left; border-bottom:1px solid #eee; padding-bottom:0.3rem;";
+                label.style.cssText = "font-size:0.9rem; font-weight:700; color:var(--accent-orange); text-align:center;";
                 label.innerHTML = `<i class="fa-solid fa-file-lines"></i> Pagina ${i}`;
                 wrapper.appendChild(label);
 
                 const canvas = document.createElement('canvas');
-                canvas.style.cssText = "width: 100%; height: auto; border: 1px solid var(--border-color); border-radius: 4px; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);";
+                canvas.style.cssText = "width: 100%; height: auto; border: 1px solid var(--border-color); border-radius: 4px; background: white;";
                 wrapper.appendChild(canvas);
+
+                const select = document.createElement('select');
+                select.className = 'page-assign-select';
+                select.dataset.page = i;
+                select.style.cssText = "width:100%; padding:0.4rem; font-size:0.82rem; border:1px solid var(--border-color); border-radius:5px; background:#fff;";
+                select.innerHTML = getBoxOptionsHtml(pageAssignments[i] || '');
+                select.addEventListener('change', function() {
+                    const pageNum = parseInt(this.dataset.page);
+                    const val = this.value;
+                    if (val) {
+                        pageAssignments[pageNum] = val;
+                        wrapper.style.borderColor = 'var(--accent-green)';
+                    } else {
+                        delete pageAssignments[pageNum];
+                        wrapper.style.borderColor = 'var(--border-color)';
+                    }
+                    updateAssignmentSummary();
+                });
+                wrapper.appendChild(select);
 
                 grid.appendChild(wrapper);
 
+                // Evidenzia se già assegnata
+                if (pageAssignments[i]) {
+                    wrapper.style.borderColor = 'var(--accent-green)';
+                }
+
                 try {
                     const page = await pdfJsDocInstance.getPage(i);
-                    const viewport = page.getViewport({ scale: 1.2 }); 
+                    const viewport = page.getViewport({ scale: 1.35 });
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
                     const context = canvas.getContext('2d');
@@ -1150,30 +1223,98 @@
             }
         }
 
-        function addMappingRuleRow() {
-            const container = document.getElementById('mappingRulesContainer');
-            const optionsHtml = docNames.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
-            const rowId = 'rule-' + Date.now() + Math.random().toString(36).substr(2, 5);
+        function applyRangeAssignment() {
+            const from = parseInt(document.getElementById('rangeFrom').value) || 1;
+            const to = parseInt(document.getElementById('rangeTo').value) || 1;
+            const target = document.getElementById('rangeTarget').value;
 
-            const rowHtml = `
-                <div class="rule-row" id="${rowId}" style="display:flex; gap:0.75rem; align-items:center; background:var(--card-inner-bg); padding:0.75rem; border:1px solid var(--border-color); border-radius:8px;">
-                    <div style="flex: 1;">
-                        <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:0.2rem;">N° Pagina / Intervallo</label>
-                        <input type="text" class="rule-pages" placeholder="es. 1 o 2-3" style="padding:0.5rem; font-size:0.9rem;">
+            if (!target) {
+                alert("Seleziona un box di destinazione.");
+                return;
+            }
+            if (from < 1 || to > totalPdfPages || from > to) {
+                alert(`Intervallo non valido. Usa valori tra 1 e ${totalPdfPages}, con "Da" ≤ "A".`);
+                return;
+            }
+
+            for (let p = from; p <= to; p++) {
+                pageAssignments[p] = target;
+                const select = document.querySelector(`.page-assign-select[data-page="${p}"]`);
+                if (select) {
+                    select.value = target;
+                    const card = select.closest('.page-card');
+                    if (card) card.style.borderColor = 'var(--accent-green)';
+                }
+            }
+            updateAssignmentSummary();
+        }
+
+        function clearAllAssignments() {
+            pageAssignments = {};
+            document.querySelectorAll('.page-assign-select').forEach(sel => {
+                sel.value = '';
+                const card = sel.closest('.page-card');
+                if (card) card.style.borderColor = 'var(--border-color)';
+            });
+            updateAssignmentSummary();
+        }
+
+        function updateAssignmentSummary() {
+            const summary = document.getElementById('assignmentSummary');
+            const counter = document.getElementById('assignCounter');
+            const assignedPages = Object.keys(pageAssignments).map(Number).sort((a,b) => a-b);
+            const count = assignedPages.length;
+
+            counter.textContent = `${count} / ${totalPdfPages} pagine assegnate`;
+            counter.style.color = count === totalPdfPages ? 'var(--accent-green)' : (count > 0 ? 'var(--accent-orange)' : 'var(--text-muted)');
+
+            if (count === 0) {
+                summary.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem;">Nessuna pagina assegnata. Usa i menu sotto le pagine o lo strumento intervallo.</p>';
+                return;
+            }
+
+            // Raggruppa per box
+            const byBox = {};
+            assignedPages.forEach(p => {
+                const boxId = pageAssignments[p];
+                if (!byBox[boxId]) byBox[boxId] = [];
+                byBox[boxId].push(p);
+            });
+
+            let html = '';
+            Object.keys(byBox).forEach(boxId => {
+                const doc = docNames.find(d => d.id == boxId);
+                const pages = byBox[boxId];
+                // Comprimi in intervalli leggibili: 1,2,3 → 1-3
+                const ranges = compressPageList(pages);
+                html += `
+                    <div style="background:var(--card-inner-bg); border:1px solid var(--border-color); border-radius:6px; padding:0.6rem 0.75rem; display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
+                        <div>
+                            <strong style="font-size:0.88rem;"><i class="fa-solid ${doc ? doc.icon : 'fa-folder'}"></i> ${doc ? doc.name : 'Box ' + boxId}</strong>
+                            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.15rem;">Pagine: ${ranges}</div>
+                        </div>
+                        <span style="background:var(--accent-green); color:#fff; font-size:0.75rem; font-weight:700; padding:0.15rem 0.5rem; border-radius:10px;">${pages.length}</span>
                     </div>
-                    <div style="flex: 1.8;">
-                        <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:0.2rem;">Destinazione Box</label>
-                        <select class="rule-target" style="padding:0.5rem; font-size:0.9rem;">
-                            <option value="">-- Seleziona Box --</option>
-                            ${optionsHtml}
-                        </select>
-                    </div>
-                    <button onclick="document.getElementById('${rowId}').remove()" style="background:none; border:none; color:#e53e3e; cursor:pointer; font-size:1.1rem; padding-top:1.1rem;" title="Elimina regola">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </div>
-            `;
-            container.insertAdjacentHTML('beforeend', rowHtml);
+                `;
+            });
+            summary.innerHTML = html;
+        }
+
+        function compressPageList(pages) {
+            if (!pages.length) return '';
+            const sorted = [...pages].sort((a,b) => a-b);
+            const ranges = [];
+            let start = sorted[0], end = sorted[0];
+            for (let i = 1; i < sorted.length; i++) {
+                if (sorted[i] === end + 1) {
+                    end = sorted[i];
+                } else {
+                    ranges.push(start === end ? `${start}` : `${start}-${end}`);
+                    start = end = sorted[i];
+                }
+            }
+            ranges.push(start === end ? `${start}` : `${start}-${end}`);
+            return ranges.join(', ');
         }
 
         function closeMultiPdfModal() {
@@ -1181,68 +1322,50 @@
             loadedMasterPdfDoc = null;
             masterPdfArrayBuffer = null;
             pdfJsDocInstance = null;
+            pageAssignments = {};
         }
 
         async function executePdfSplitting() {
             if (!loadedMasterPdfDoc) return;
 
-            const ruleRows = document.querySelectorAll('.rule-row');
-            let assignedCount = 0;
-
-            for (let row of ruleRows) {
-                const pagesInput = row.querySelector('.rule-pages').value.trim();
-                const targetBoxId = row.querySelector('.rule-target').value;
-
-                if (!pagesInput || !targetBoxId) continue;
-
-                const pageIndices = parsePageRangeString(pagesInput, totalPdfPages);
-                if (pageIndices.length > 0) {
-                    const subPdf = await PDFLib.PDFDocument.create();
-                    const copiedPages = await subPdf.copyPages(loadedMasterPdfDoc, pageIndices);
-                    copiedPages.forEach(p => subPdf.addPage(p));
-
-                    const pdfBytes = await subPdf.save();
-                    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-                    const splitFile = new File([blob], `estratto_pag_${pagesInput}_${masterFileName}`, { type: 'application/pdf' });
-
-                    processFiles([splitFile], parseInt(targetBoxId));
-                    assignedCount++;
-                }
+            const assignedPages = Object.keys(pageAssignments).map(Number);
+            if (assignedPages.length === 0) {
+                alert("Assegna almeno una pagina a un box prima di confermare.");
+                return;
             }
 
-            if (assignedCount > 0) {
-                closeMultiPdfModal();
-                
-                const archiveCard = document.getElementById('archive-card');
-                archiveCard.classList.add('active');
-                archiveCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                
-                archiveCard.classList.add('highlight-card');
-                setTimeout(() => {
-                    archiveCard.classList.remove('highlight-card');
-                }, 2000);
-            } else {
-                alert("Inserisci almeno un intervallo di pagine valido e seleziona il box di destinazione.");
-            }
-        }
-
-        function parsePageRangeString(str, maxPages) {
-            let indices = [];
-            let parts = str.split(',');
-            parts.forEach(part => {
-                if (part.includes('-')) {
-                    let range = part.split('-');
-                    let start = parseInt(range[0].trim()) - 1;
-                    let end = parseInt(range[1].trim()) - 1;
-                    for (let i = start; i <= end && i < maxPages; i++) {
-                        if (i >= 0) indices.push(i);
-                    }
-                } else {
-                    let p = parseInt(part.trim()) - 1;
-                    if (p >= 0 && p < maxPages) indices.push(p);
-                }
+            // Raggruppa pagine per boxId
+            const byBox = {};
+            assignedPages.forEach(p => {
+                const boxId = pageAssignments[p];
+                if (!byBox[boxId]) byBox[boxId] = [];
+                byBox[boxId].push(p - 1); // 0-based per pdf-lib
             });
-            return [...new Set(indices)];
+
+            for (const boxId of Object.keys(byBox)) {
+                const pageIndices = byBox[boxId].sort((a,b) => a-b);
+                const subPdf = await PDFLib.PDFDocument.create();
+                const copiedPages = await subPdf.copyPages(loadedMasterPdfDoc, pageIndices);
+                copiedPages.forEach(p => subPdf.addPage(p));
+
+                const pdfBytes = await subPdf.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const rangeLabel = compressPageList(pageIndices.map(i => i + 1));
+                const splitFile = new File([blob], `estratto_pag_${rangeLabel}_${masterFileName}`, { type: 'application/pdf' });
+
+                processFiles([splitFile], parseInt(boxId));
+            }
+
+            closeMultiPdfModal();
+            
+            const archiveCard = document.getElementById('archive-card');
+            archiveCard.classList.add('active');
+            archiveCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            archiveCard.classList.add('highlight-card');
+            setTimeout(() => {
+                archiveCard.classList.remove('highlight-card');
+            }, 2000);
         }
 
         // --- CONVERTITORI TERMOIDRAULICI ---
