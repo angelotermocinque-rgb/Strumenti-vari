@@ -360,6 +360,77 @@
             display: flex;
         }
 
+        .doc-box .box-actions {
+            display: none;
+            gap: 0.35rem;
+            margin-top: 0.5rem;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .doc-box.has-file .box-actions {
+            display: flex;
+        }
+
+        .btn-box-action {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            color: var(--accent-cyan);
+            padding: 0.3rem 0.55rem;
+            border-radius: 5px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .btn-box-action:hover {
+            background: var(--accent-cyan);
+            color: #fff;
+            border-color: var(--accent-cyan);
+        }
+
+        .reorder-page-item {
+            background: #fff;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.5rem;
+            cursor: grab;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.35rem;
+            transition: box-shadow 0.15s, border-color 0.15s;
+            user-select: none;
+        }
+
+        .reorder-page-item.dragging {
+            opacity: 0.5;
+            border-color: var(--accent-orange);
+        }
+
+        .reorder-page-item.drag-over {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 0 3px rgba(0, 119, 170, 0.2);
+        }
+
+        .compress-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.85rem;
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+
+        .compress-option input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-orange);
+            cursor: pointer;
+        }
+
         /* ===== STILI CALCOLATORE IVA BENI SIGNIFICATIVI ===== */
         .iva-form {
             display: grid;
@@ -851,9 +922,41 @@
                 <!-- Generato dinamicamente -->
             </div>
 
+            <label class="compress-option">
+                <input type="checkbox" id="compressPdfOption">
+                <span><i class="fa-solid fa-file-zipper"></i> Comprimi PDF in uscita (immagini a qualità media, ideale per email/portali)</span>
+            </label>
+
             <button class="btn-action" id="saveDocsBtn" onclick="saveAllDocsToFolder()" disabled>
-                <i class="fa-solid fa-floppy-disk"></i> Salva Tutti i PDF nella Cartella...
+                <i class="fa-solid fa-folder-open"></i> Scegli cartella e salva tutti i PDF
             </button>
+            <p id="saveFolderHint" style="margin-top:0.6rem; font-size:0.82rem; color:var(--text-muted); text-align:center;">
+                Chrome / Edge: salvataggio diretto nella cartella scelta. Altri browser: download dei singoli file.
+            </p>
+        </div>
+    </div>
+
+    <!-- MODALE RIORDINA PAGINE DI UN BOX -->
+    <div id="reorderModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:1001; justify-content:center; align-items:center; padding:1rem;">
+        <div style="background:var(--card-bg); width:100%; max-width:1100px; max-height:92vh; border-radius:var(--radius); display:flex; flex-direction:column; overflow:hidden; box-shadow:var(--shadow);">
+            <div style="padding:1rem 1.5rem; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="font-size:1.2rem; display:flex; align-items:center; gap:0.5rem;">
+                    <i class="fa-solid fa-arrows-up-down-left-right" style="color:var(--accent-orange);"></i>
+                    <span id="reorderModalTitle">Riordina pagine</span>
+                </h3>
+                <button onclick="closeReorderModal()" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--text-muted);"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <p style="padding:0.75rem 1.5rem; font-size:0.9rem; color:var(--text-muted); border-bottom:1px solid var(--border-color);">
+                Trascina le pagine per riordinarle. Puoi anche ruotarle di 90° prima di confermare.
+            </p>
+            <div id="reorderPagesGrid" style="flex:1; overflow-y:auto; padding:1.25rem; display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:1rem; background:#f1f3f5;">
+            </div>
+            <div style="padding:1rem 1.5rem; border-top:1px solid var(--border-color); display:flex; justify-content:flex-end; gap:1rem; background:var(--card-inner-bg);">
+                <button class="btn-action" style="margin:0; width:auto; background:#6c757d; padding:0.55rem 1.1rem;" onclick="closeReorderModal()">Annulla</button>
+                <button class="btn-action" style="margin:0; width:auto; padding:0.55rem 1.4rem;" onclick="confirmReorder()">
+                    <i class="fa-solid fa-check"></i> Conferma ordine
+                </button>
+            </div>
         </div>
     </div>
 
@@ -879,8 +982,11 @@
                 <!-- Colonna Sinistra: Anteprima Pagine con select sotto ciascuna -->
                 <div style="flex: 1.4; padding: 1.25rem; overflow-y: auto; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.75rem;">
                     <h4 style="font-size: 1rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-                        <i class="fa-solid fa-images"></i> Pagine — scegli la destinazione sotto ciascuna
+                        <i class="fa-solid fa-images"></i> Pagine — trascina per riordinare, poi assegna il box
                     </h4>
+                    <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:0.5rem;">
+                        <i class="fa-solid fa-hand"></i> Trascina le card per cambiare l'ordine delle pagine nel documento finale.
+                    </p>
                     <div id="pdfThumbnailsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem;">
                         <!-- Card pagina generate via JS -->
                     </div>
@@ -976,6 +1082,11 @@
                         <p>${doc.desc}</p>
                         <input type="file" accept="image/*,application/pdf" multiple onchange="handleDocFile(event, ${doc.id})">
                         <div class="file-list" id="list-${doc.id}"></div>
+                        <div class="box-actions">
+                            <button type="button" class="btn-box-action" onclick="event.stopPropagation(); openReorderModal(${doc.id})" title="Riordina e ruota pagine">
+                                <i class="fa-solid fa-arrows-up-down-left-right"></i> Riordina
+                            </button>
+                        </div>
                     </div>
                 `).join('');
             }
@@ -1032,7 +1143,7 @@
 
             if (files && files.length > 0) {
                 box.classList.add('has-file');
-                listContainer.innerHTML = files.map((f, index) => `
+                listContainer.innerHTML = files.map((f) => `
                     <div class="file-tag">
                         <span><i class="fa-solid fa-file-arrow-up"></i> ${f.name}</span>
                     </div>
@@ -1059,48 +1170,385 @@
             btn.disabled = !hasAny;
         }
 
-        async function saveAllDocsToFolder() {
-            for (const boxId in clientDocs) {
-                const files = clientDocs[boxId];
-                if (!files || files.length === 0) continue;
+        // Converte un'immagine in JPEG compresso (per opzione compressione)
+        async function imageToCompressedJpegBytes(arrayBuffer, quality = 0.72) {
+            return new Promise((resolve, reject) => {
+                const blob = new Blob([arrayBuffer]);
+                const url = URL.createObjectURL(blob);
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let w = img.width, h = img.height;
+                    // Limita lato lungo a 2000px per alleggerire
+                    const maxSide = 2000;
+                    if (w > maxSide || h > maxSide) {
+                        const ratio = Math.min(maxSide / w, maxSide / h);
+                        w = Math.round(w * ratio);
+                        h = Math.round(h * ratio);
+                    }
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, w, h);
+                    ctx.drawImage(img, 0, 0, w, h);
+                    canvas.toBlob(async (jpegBlob) => {
+                        URL.revokeObjectURL(url);
+                        if (!jpegBlob) { reject(new Error('JPEG fail')); return; }
+                        resolve(await jpegBlob.arrayBuffer());
+                    }, 'image/jpeg', quality);
+                };
+                img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Img load fail')); };
+                img.src = url;
+            });
+        }
 
-                const docInfo = docNames.find(d => d.id == boxId);
-                const pdfDoc = await PDFLib.PDFDocument.create();
+        // Renderizza una pagina PDF in JPEG compresso (via pdf.js)
+        async function pdfPageToCompressedJpeg(pdfJsDoc, pageIndex1Based, quality = 0.72, scale = 1.5) {
+            const page = await pdfJsDoc.getPage(pageIndex1Based);
+            const viewport = page.getViewport({ scale });
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            const ctx = canvas.getContext('2d');
+            await page.render({ canvasContext: ctx, viewport }).promise;
+            return new Promise((resolve) => {
+                canvas.toBlob(async (blob) => {
+                    resolve(await blob.arrayBuffer());
+                }, 'image/jpeg', quality);
+            });
+        }
 
-                for (let file of files) {
-                    const arrayBuffer = await file.arrayBuffer();
-                    if (file.type === 'application/pdf') {
-                        try {
+        async function buildPdfBytesForBox(boxId, compress) {
+            const files = clientDocs[boxId];
+            if (!files || files.length === 0) return null;
+
+            const pdfDoc = await PDFLib.PDFDocument.create();
+
+            for (let file of files) {
+                const arrayBuffer = await file.arrayBuffer();
+                if (file.type === 'application/pdf') {
+                    try {
+                        if (compress) {
+                            const uint8 = new Uint8Array(arrayBuffer);
+                            const pdfJsDoc = await pdfjsLib.getDocument({ data: uint8 }).promise;
+                            const n = pdfJsDoc.numPages;
+                            for (let p = 1; p <= n; p++) {
+                                const jpegBytes = await pdfPageToCompressedJpeg(pdfJsDoc, p, 0.72, 1.4);
+                                const img = await pdfDoc.embedJpg(jpegBytes);
+                                const page = pdfDoc.addPage([img.width, img.height]);
+                                page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+                            }
+                        } else {
                             const donorPdf = await PDFLib.PDFDocument.load(arrayBuffer);
                             const copiedPages = await pdfDoc.copyPages(donorPdf, donorPdf.getPageIndices());
                             copiedPages.forEach(p => pdfDoc.addPage(p));
-                        } catch (err) {
-                            console.error("Errore caricamento PDF:", err);
                         }
-                    } else if (file.type.startsWith('image/')) {
+                    } catch (err) {
+                        console.error("Errore caricamento PDF:", err);
+                    }
+                } else if (file.type.startsWith('image/')) {
+                    try {
                         let embeddedImage;
-                        if (file.type.includes('png')) {
-                            embeddedImage = await pdfDoc.embedPng(arrayBuffer);
+                        if (compress || file.type.includes('png')) {
+                            const jpegBytes = await imageToCompressedJpegBytes(arrayBuffer, compress ? 0.72 : 0.92);
+                            embeddedImage = await pdfDoc.embedJpg(jpegBytes);
                         } else {
                             embeddedImage = await pdfDoc.embedJpg(arrayBuffer);
                         }
                         const page = pdfDoc.addPage([embeddedImage.width, embeddedImage.height]);
                         page.drawImage(embeddedImage, {
-                            x: 0,
-                            y: 0,
+                            x: 0, y: 0,
                             width: embeddedImage.width,
                             height: embeddedImage.height,
                         });
+                    } catch (err) {
+                        console.error("Errore immagine:", err);
+                    }
+                }
+            }
+
+            if (pdfDoc.getPageCount() === 0) return null;
+            return await pdfDoc.save();
+        }
+
+        function safeFileName(name) {
+            // Mantiene gli spazi; rimuove solo caratteri non ammessi nei nomi file
+            return (name || 'documento')
+                .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .slice(0, 120);
+        }
+
+        async function saveAllDocsToFolder() {
+            const compress = document.getElementById('compressPdfOption').checked;
+            const btn = document.getElementById('saveDocsBtn');
+            const hint = document.getElementById('saveFolderHint');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Preparazione...';
+
+            let dirHandle = null;
+            const canUseFolderPicker = typeof window.showDirectoryPicker === 'function';
+
+            try {
+                if (canUseFolderPicker) {
+                    try {
+                        dirHandle = await window.showDirectoryPicker({
+                            mode: 'readwrite',
+                            startIn: 'documents'
+                        });
+                    } catch (pickerErr) {
+                        // Utente ha annullato o permesso negato
+                        if (pickerErr && pickerErr.name === 'AbortError') {
+                            return; // annullato: esci senza fare nulla
+                        }
+                        console.warn('Directory picker non disponibile, uso download:', pickerErr);
+                        dirHandle = null;
                     }
                 }
 
-                const pdfBytes = await pdfDoc.save();
-                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = `${docInfo.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-                link.click();
+                // Genera tutti i PDF
+                const outputs = [];
+                for (const boxId in clientDocs) {
+                    const files = clientDocs[boxId];
+                    if (!files || files.length === 0) continue;
+                    const docInfo = docNames.find(d => d.id == boxId);
+                    const fileName = safeFileName(docInfo ? docInfo.name : `box_${boxId}`) + '.pdf';
+
+                    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Genero ${fileName}...`;
+                    const pdfBytes = await buildPdfBytesForBox(boxId, compress);
+                    if (pdfBytes) {
+                        outputs.push({ fileName, pdfBytes });
+                    }
+                }
+
+                if (outputs.length === 0) {
+                    alert('Nessun documento da salvare.');
+                    return;
+                }
+
+                if (dirHandle) {
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Scrittura in cartella...';
+                    let saved = 0;
+                    for (const { fileName, pdfBytes } of outputs) {
+                        const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
+                        const writable = await fileHandle.createWritable();
+                        await writable.write(pdfBytes);
+                        await writable.close();
+                        saved++;
+                    }
+                    if (hint) {
+                        hint.innerHTML = `<span style="color:var(--accent-green);"><i class="fa-solid fa-circle-check"></i> Salvati <strong>${saved}</strong> PDF nella cartella scelta.</span>`;
+                    }
+                } else {
+                    // Fallback: download uno a uno (Firefox, Safari, o picker non supportato)
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Download in corso...';
+                    for (const { fileName, pdfBytes } of outputs) {
+                        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.download = fileName;
+                        link.click();
+                        URL.revokeObjectURL(link.href);
+                        // Piccola pausa per evitare che il browser blocchi download multipli
+                        await new Promise(r => setTimeout(r, 250));
+                    }
+                    if (hint) {
+                        hint.innerHTML = `<span style="color:var(--accent-orange);"><i class="fa-solid fa-download"></i> Scaricati <strong>${outputs.length}</strong> file (il browser non supporta il salvataggio diretto in cartella).</span>`;
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Errore durante il salvataggio: ' + (err.message || err));
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-folder-open"></i> Scegli cartella e salva tutti i PDF';
+                checkSaveButtonState();
             }
+        }
+
+        // ===== RIORDINO PAGINE DI UN BOX =====
+        let reorderBoxId = null;
+        let reorderItems = []; // { id, canvasDataUrl, rotation, sourceType, sourceData }
+        let dragSrcIndex = null;
+
+        async function openReorderModal(boxId) {
+            const files = clientDocs[boxId];
+            if (!files || files.length === 0) return;
+
+            reorderBoxId = boxId;
+            reorderItems = [];
+            const docInfo = docNames.find(d => d.id == boxId);
+            document.getElementById('reorderModalTitle').textContent = `Riordina: ${docInfo ? docInfo.name : 'Box'}`;
+            document.getElementById('reorderModal').style.display = 'flex';
+            const grid = document.getElementById('reorderPagesGrid');
+            grid.innerHTML = '<p style="color:var(--text-muted);">Caricamento anteprime...</p>';
+
+            let itemId = 0;
+            for (const file of files) {
+                const arrayBuffer = await file.arrayBuffer();
+                if (file.type === 'application/pdf') {
+                    try {
+                        const uint8 = new Uint8Array(arrayBuffer);
+                        const pdfJsDoc = await pdfjsLib.getDocument({ data: uint8 }).promise;
+                        for (let p = 1; p <= pdfJsDoc.numPages; p++) {
+                            const page = await pdfJsDoc.getPage(p);
+                            const viewport = page.getViewport({ scale: 0.7 });
+                            const canvas = document.createElement('canvas');
+                            canvas.width = viewport.width;
+                            canvas.height = viewport.height;
+                            await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+                            reorderItems.push({
+                                id: itemId++,
+                                dataUrl: canvas.toDataURL('image/jpeg', 0.85),
+                                rotation: 0,
+                                sourceType: 'pdf-page',
+                                pdfBuffer: arrayBuffer,
+                                pageIndex: p - 1
+                            });
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    }
+                } else if (file.type.startsWith('image/')) {
+                    const blob = new Blob([arrayBuffer], { type: file.type });
+                    const dataUrl = await new Promise(res => {
+                        const r = new FileReader();
+                        r.onload = () => res(r.result);
+                        r.readAsDataURL(blob);
+                    });
+                    reorderItems.push({
+                        id: itemId++,
+                        dataUrl,
+                        rotation: 0,
+                        sourceType: 'image',
+                        imageBuffer: arrayBuffer,
+                        imageType: file.type
+                    });
+                }
+            }
+            renderReorderGrid();
+        }
+
+        function renderReorderGrid() {
+            const grid = document.getElementById('reorderPagesGrid');
+            grid.innerHTML = '';
+            reorderItems.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'reorder-page-item';
+                div.draggable = true;
+                div.dataset.index = index;
+                div.innerHTML = `
+                    <div style="font-size:0.8rem; font-weight:700; color:var(--accent-orange);">Pag. ${index + 1}</div>
+                    <img src="${item.dataUrl}" style="width:100%; height:auto; border-radius:4px; border:1px solid var(--border-color); transform:rotate(${item.rotation}deg); transition:transform 0.2s;">
+                    <button type="button" class="btn-box-action" style="width:100%; justify-content:center;" onclick="event.stopPropagation(); rotateReorderItem(${index})">
+                        <i class="fa-solid fa-rotate-right"></i> 90°
+                    </button>
+                `;
+                div.addEventListener('dragstart', (e) => {
+                    dragSrcIndex = index;
+                    div.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+                div.addEventListener('dragend', () => {
+                    div.classList.remove('dragging');
+                    dragSrcIndex = null;
+                    document.querySelectorAll('.reorder-page-item').forEach(el => el.classList.remove('drag-over'));
+                });
+                div.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    div.classList.add('drag-over');
+                });
+                div.addEventListener('dragleave', () => div.classList.remove('drag-over'));
+                div.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    div.classList.remove('drag-over');
+                    const targetIndex = parseInt(div.dataset.index);
+                    if (dragSrcIndex === null || dragSrcIndex === targetIndex) return;
+                    const moved = reorderItems.splice(dragSrcIndex, 1)[0];
+                    reorderItems.splice(targetIndex, 0, moved);
+                    renderReorderGrid();
+                });
+                grid.appendChild(div);
+            });
+        }
+
+        function rotateReorderItem(index) {
+            reorderItems[index].rotation = (reorderItems[index].rotation + 90) % 360;
+            renderReorderGrid();
+        }
+
+        function closeReorderModal() {
+            document.getElementById('reorderModal').style.display = 'none';
+            reorderBoxId = null;
+            reorderItems = [];
+        }
+
+        async function rotateImageBuffer(arrayBuffer, degrees, mimeHint) {
+            return new Promise((resolve, reject) => {
+                const blob = new Blob([arrayBuffer]);
+                const url = URL.createObjectURL(blob);
+                const img = new Image();
+                img.onload = () => {
+                    const rad = (degrees * Math.PI) / 180;
+                    const sw = img.width, sh = img.height;
+                    const cw = (degrees === 90 || degrees === 270) ? sh : sw;
+                    const ch = (degrees === 90 || degrees === 270) ? sw : sh;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = cw;
+                    canvas.height = ch;
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(0, 0, cw, ch);
+                    ctx.translate(cw / 2, ch / 2);
+                    ctx.rotate(rad);
+                    ctx.drawImage(img, -sw / 2, -sh / 2);
+                    canvas.toBlob(async (b) => {
+                        URL.revokeObjectURL(url);
+                        if (!b) { reject(new Error('rotate fail')); return; }
+                        resolve(await b.arrayBuffer());
+                    }, 'image/jpeg', 0.92);
+                };
+                img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('img fail')); };
+                img.src = url;
+            });
+        }
+
+        async function confirmReorder() {
+            if (reorderBoxId === null || reorderItems.length === 0) return;
+
+            const pdfDoc = await PDFLib.PDFDocument.create();
+
+            for (const item of reorderItems) {
+                if (item.sourceType === 'image') {
+                    let buffer = item.imageBuffer;
+                    if (item.rotation) {
+                        buffer = await rotateImageBuffer(buffer, item.rotation, item.imageType);
+                    }
+                    const embedded = await pdfDoc.embedJpg(buffer);
+                    const page = pdfDoc.addPage([embedded.width, embedded.height]);
+                    page.drawImage(embedded, { x: 0, y: 0, width: embedded.width, height: embedded.height });
+                } else if (item.sourceType === 'pdf-page') {
+                    const donor = await PDFLib.PDFDocument.load(item.pdfBuffer);
+                    const [copied] = await pdfDoc.copyPages(donor, [item.pageIndex]);
+                    if (item.rotation) {
+                        const current = copied.getRotation().angle;
+                        copied.setRotation(PDFLib.degrees((current + item.rotation) % 360));
+                    }
+                    pdfDoc.addPage(copied);
+                }
+            }
+
+            const pdfBytes = await pdfDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const docInfo = docNames.find(d => d.id == reorderBoxId);
+            const newFile = new File([blob], `${safeFileName(docInfo ? docInfo.name : 'doc')} riordinato.pdf`, { type: 'application/pdf' });
+
+            clientDocs[reorderBoxId] = [newFile];
+            updateDocBoxUI(reorderBoxId);
+            closeReorderModal();
         }
 
         // --- GESTIONE SMISTAMENTO MULTI-PAGINA VELOCE ---
@@ -1109,8 +1557,15 @@
         let masterFileName = "";
         let totalPdfPages = 0;
         let pdfJsDocInstance = null;
-        // pageAssignments: chiave = numero pagina (1-based), valore = boxId (string) oppure ""
+        // pageAssignments: chiave = numero pagina originale (1-based), valore = boxId
         let pageAssignments = {};
+        // pageRotations: chiave = numero pagina originale (1-based), valore = gradi
+        let pageRotations = {};
+        // Ordine di visualizzazione/smistamento (numeri pagina originali 1-based)
+        let pageOrder = [];
+        // Cache anteprime: pageNum -> dataURL
+        let pagePreviewCache = {};
+        let multiDragSrcPage = null;
 
         function handleMultiPDFSelect(event) {
             const file = event.target.files[0];
@@ -1128,10 +1583,14 @@
             masterFileName = file.name;
             masterPdfArrayBuffer = await file.arrayBuffer();
             pageAssignments = {};
+            pageRotations = {};
+            pagePreviewCache = {};
+            pageOrder = [];
             
             try {
                 loadedMasterPdfDoc = await PDFLib.PDFDocument.load(masterPdfArrayBuffer);
                 totalPdfPages = loadedMasterPdfDoc.getPageCount();
+                pageOrder = Array.from({ length: totalPdfPages }, (_, i) => i + 1);
 
                 const uint8Array = new Uint8Array(masterPdfArrayBuffer);
                 pdfJsDocInstance = await pdfjsLib.getDocument({ data: uint8Array }).promise;
@@ -1139,7 +1598,6 @@
                 document.getElementById('multiPdfInfo').innerHTML = `File: <strong>${masterFileName}</strong> (Totale Pagine: <strong>${totalPdfPages}</strong>)`;
                 document.getElementById('multiPdfModal').style.display = 'flex';
 
-                // Popola select intervallo
                 const rangeSelect = document.getElementById('rangeTarget');
                 rangeSelect.innerHTML = '<option value="">-- Seleziona --</option>' + 
                     docNames.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
@@ -1148,11 +1606,30 @@
                 document.getElementById('rangeFrom').max = totalPdfPages;
                 document.getElementById('rangeTo').max = totalPdfPages;
 
-                await renderLargePdfThumbnails();
+                await buildPagePreviewCache();
+                renderOrderedPdfThumbnails();
                 updateAssignmentSummary();
             } catch (err) {
                 alert("Errore nella lettura del file PDF.");
                 console.error(err);
+            }
+        }
+
+        async function buildPagePreviewCache() {
+            pagePreviewCache = {};
+            for (let i = 1; i <= totalPdfPages; i++) {
+                try {
+                    const page = await pdfJsDocInstance.getPage(i);
+                    const viewport = page.getViewport({ scale: 1.35 });
+                    const canvas = document.createElement('canvas');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+                    pagePreviewCache[i] = canvas.toDataURL('image/jpeg', 0.88);
+                } catch (e) {
+                    console.error(`Errore preview pagina ${i}`, e);
+                    pagePreviewCache[i] = '';
+                }
             }
         }
 
@@ -1165,30 +1642,65 @@
             return html;
         }
 
-        async function renderLargePdfThumbnails() {
+        function renderOrderedPdfThumbnails() {
             const grid = document.getElementById('pdfThumbnailsGrid');
             grid.innerHTML = '';
 
-            for (let i = 1; i <= totalPdfPages; i++) {
+            pageOrder.forEach((origPage, displayIdx) => {
                 const wrapper = document.createElement('div');
                 wrapper.className = 'page-card';
-                wrapper.dataset.page = i;
-                wrapper.style.cssText = "background:#ffffff; border:2px solid var(--border-color); border-radius:8px; padding:0.6rem; box-shadow: 0 2px 6px rgba(0,0,0,0.05); display:flex; flex-direction:column; gap:0.4rem; transition: border-color 0.2s;";
+                wrapper.draggable = true;
+                wrapper.dataset.page = origPage;
+                wrapper.style.cssText = "background:#ffffff; border:2px solid var(--border-color); border-radius:8px; padding:0.6rem; box-shadow: 0 2px 6px rgba(0,0,0,0.05); display:flex; flex-direction:column; gap:0.4rem; transition: border-color 0.2s, opacity 0.15s; cursor:grab;";
                 
+                if (pageAssignments[origPage]) {
+                    wrapper.style.borderColor = 'var(--accent-green)';
+                }
+
                 const label = document.createElement('div');
-                label.style.cssText = "font-size:0.9rem; font-weight:700; color:var(--accent-orange); text-align:center;";
-                label.innerHTML = `<i class="fa-solid fa-file-lines"></i> Pagina ${i}`;
+                label.style.cssText = "font-size:0.85rem; font-weight:700; color:var(--accent-orange); display:flex; justify-content:space-between; align-items:center;";
+                label.innerHTML = `
+                    <span><i class="fa-solid fa-grip-vertical" style="color:var(--text-muted); margin-right:0.25rem;"></i> #${displayIdx + 1}</span>
+                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:500;">orig. ${origPage}</span>
+                `;
                 wrapper.appendChild(label);
 
-                const canvas = document.createElement('canvas');
-                canvas.style.cssText = "width: 100%; height: auto; border: 1px solid var(--border-color); border-radius: 4px; background: white;";
-                wrapper.appendChild(canvas);
+                const img = document.createElement('img');
+                img.src = pagePreviewCache[origPage] || '';
+                img.alt = `Pagina ${origPage}`;
+                img.draggable = false;
+                img.style.cssText = "width: 100%; height: auto; border: 1px solid var(--border-color); border-radius: 4px; background: white; transition: transform 0.25s; pointer-events:none;";
+                if (pageRotations[origPage]) {
+                    img.style.transform = `rotate(${pageRotations[origPage]}deg)`;
+                }
+                wrapper.appendChild(img);
+
+                const actionsRow = document.createElement('div');
+                actionsRow.style.cssText = "display:flex; gap:0.35rem; align-items:center;";
+
+                const rotBtn = document.createElement('button');
+                rotBtn.type = 'button';
+                rotBtn.title = 'Ruota 90° orario';
+                rotBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i>';
+                rotBtn.style.cssText = "flex-shrink:0; width:36px; height:34px; border:1px solid var(--border-color); border-radius:5px; background:#fff; color:var(--accent-orange); cursor:pointer; font-size:0.95rem;";
+                rotBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    pageRotations[origPage] = ((pageRotations[origPage] || 0) + 90) % 360;
+                    img.style.transform = `rotate(${pageRotations[origPage]}deg)`;
+                    rotBadge.textContent = pageRotations[origPage] ? `${pageRotations[origPage]}°` : '';
+                });
+                actionsRow.appendChild(rotBtn);
+
+                const rotBadge = document.createElement('span');
+                rotBadge.style.cssText = "font-size:0.7rem; color:var(--text-muted); min-width:28px;";
+                if (pageRotations[origPage]) rotBadge.textContent = `${pageRotations[origPage]}°`;
+                actionsRow.appendChild(rotBadge);
 
                 const select = document.createElement('select');
                 select.className = 'page-assign-select';
-                select.dataset.page = i;
-                select.style.cssText = "width:100%; padding:0.4rem; font-size:0.82rem; border:1px solid var(--border-color); border-radius:5px; background:#fff;";
-                select.innerHTML = getBoxOptionsHtml(pageAssignments[i] || '');
+                select.dataset.page = origPage;
+                select.style.cssText = "flex:1; padding:0.4rem; font-size:0.82rem; border:1px solid var(--border-color); border-radius:5px; background:#fff;";
+                select.innerHTML = getBoxOptionsHtml(pageAssignments[origPage] || '');
                 select.addEventListener('change', function() {
                     const pageNum = parseInt(this.dataset.page);
                     const val = this.value;
@@ -1201,26 +1713,54 @@
                     }
                     updateAssignmentSummary();
                 });
-                wrapper.appendChild(select);
+                // Evita che il drag parta dal select
+                select.addEventListener('mousedown', (e) => e.stopPropagation());
+                actionsRow.appendChild(select);
+                wrapper.appendChild(actionsRow);
+
+                // Drag & drop riordino
+                wrapper.addEventListener('dragstart', (e) => {
+                    multiDragSrcPage = origPage;
+                    wrapper.classList.add('dragging');
+                    wrapper.style.opacity = '0.45';
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', String(origPage));
+                });
+                wrapper.addEventListener('dragend', () => {
+                    wrapper.classList.remove('dragging');
+                    wrapper.style.opacity = '1';
+                    multiDragSrcPage = null;
+                    document.querySelectorAll('.page-card').forEach(c => {
+                        c.style.outline = '';
+                    });
+                });
+                wrapper.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    wrapper.style.outline = '2px dashed var(--accent-cyan)';
+                });
+                wrapper.addEventListener('dragleave', () => {
+                    wrapper.style.outline = '';
+                });
+                wrapper.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    wrapper.style.outline = '';
+                    const srcPage = multiDragSrcPage;
+                    const targetPage = origPage;
+                    if (srcPage == null || srcPage === targetPage) return;
+
+                    const fromIdx = pageOrder.indexOf(srcPage);
+                    const toIdx = pageOrder.indexOf(targetPage);
+                    if (fromIdx < 0 || toIdx < 0) return;
+
+                    pageOrder.splice(fromIdx, 1);
+                    pageOrder.splice(toIdx, 0, srcPage);
+                    renderOrderedPdfThumbnails();
+                    updateAssignmentSummary();
+                });
 
                 grid.appendChild(wrapper);
-
-                // Evidenzia se già assegnata
-                if (pageAssignments[i]) {
-                    wrapper.style.borderColor = 'var(--accent-green)';
-                }
-
-                try {
-                    const page = await pdfJsDocInstance.getPage(i);
-                    const viewport = page.getViewport({ scale: 1.35 });
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-                    const context = canvas.getContext('2d');
-                    await page.render({ canvasContext: context, viewport: viewport }).promise;
-                } catch (e) {
-                    console.error(`Errore rendering anteprima pagina ${i}`, e);
-                }
-            }
+            });
         }
 
         function applyRangeAssignment() {
@@ -1262,7 +1802,8 @@
         function updateAssignmentSummary() {
             const summary = document.getElementById('assignmentSummary');
             const counter = document.getElementById('assignCounter');
-            const assignedPages = Object.keys(pageAssignments).map(Number).sort((a,b) => a-b);
+            // Rispetta l'ordine di trascinamento
+            const assignedPages = pageOrder.filter(p => pageAssignments[p]);
             const count = assignedPages.length;
 
             counter.textContent = `${count} / ${totalPdfPages} pagine assegnate`;
@@ -1273,7 +1814,7 @@
                 return;
             }
 
-            // Raggruppa per box
+            // Raggruppa per box (ordine = ordine di trascinamento)
             const byBox = {};
             assignedPages.forEach(p => {
                 const boxId = pageAssignments[p];
@@ -1323,34 +1864,49 @@
             masterPdfArrayBuffer = null;
             pdfJsDocInstance = null;
             pageAssignments = {};
+            pageRotations = {};
+            pageOrder = [];
+            pagePreviewCache = {};
+            multiDragSrcPage = null;
         }
 
         async function executePdfSplitting() {
             if (!loadedMasterPdfDoc) return;
 
-            const assignedPages = Object.keys(pageAssignments).map(Number);
-            if (assignedPages.length === 0) {
+            // Pagine assegnate nell'ordine attuale di pageOrder
+            const orderedAssigned = pageOrder.filter(p => pageAssignments[p]);
+            if (orderedAssigned.length === 0) {
                 alert("Assegna almeno una pagina a un box prima di confermare.");
                 return;
             }
 
-            // Raggruppa pagine per boxId
+            // Raggruppa per box rispettando l'ordine di trascinamento
             const byBox = {};
-            assignedPages.forEach(p => {
+            orderedAssigned.forEach(p => {
                 const boxId = pageAssignments[p];
                 if (!byBox[boxId]) byBox[boxId] = [];
-                byBox[boxId].push(p - 1); // 0-based per pdf-lib
+                byBox[boxId].push(p);
             });
 
             for (const boxId of Object.keys(byBox)) {
-                const pageIndices = byBox[boxId].sort((a,b) => a-b);
+                const pages1Based = byBox[boxId];
+                const pageIndices = pages1Based.map(p => p - 1);
                 const subPdf = await PDFLib.PDFDocument.create();
                 const copiedPages = await subPdf.copyPages(loadedMasterPdfDoc, pageIndices);
-                copiedPages.forEach(p => subPdf.addPage(p));
+
+                copiedPages.forEach((copiedPage, idx) => {
+                    const pageNum = pages1Based[idx];
+                    const rot = pageRotations[pageNum] || 0;
+                    if (rot) {
+                        const current = copiedPage.getRotation().angle;
+                        copiedPage.setRotation(PDFLib.degrees((current + rot) % 360));
+                    }
+                    subPdf.addPage(copiedPage);
+                });
 
                 const pdfBytes = await subPdf.save();
                 const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-                const rangeLabel = compressPageList(pageIndices.map(i => i + 1));
+                const rangeLabel = compressPageList(pages1Based);
                 const splitFile = new File([blob], `estratto_pag_${rangeLabel}_${masterFileName}`, { type: 'application/pdf' });
 
                 processFiles([splitFile], parseInt(boxId));
