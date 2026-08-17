@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toolbox Termoidraulica - Gruppo T5</title>
+    <!-- FontAwesome per icone -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- pdf-lib per generazione e unione PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <!-- pdf.js per anteprima visiva delle pagine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    </script>
+    <style>
+        :root {
+            --bg-light: #dcdcdc;
+            --card-bg: #ffffff;
+            --card-inner-bg: #f8f9fa;
+            --input-bg: #ffffff;
+            --accent-orange: #f26522;
+            --accent-orange-hover: #d95315;
+            --accent-cyan: #0077aa;
+            --accent-green: #1b5e20;
+            --text-main: #212529;
+            --text-muted: #6c757d;
+            --border-color: #cccccc;
+            --shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            padding: 2.5rem 1rem;
+            max-width: 1000px;
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        header h1 {
+            color: var(--text-main);
+            font-size: 2.2rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        header h1 i {
+            color: var(--accent-orange);
+        }
+
+        /* Sezioni Espandibili / Card */
+        .tool-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .tool-card.highlight-card {
+            border-color: var(--accent-orange);
+            box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.25), var(--shadow);
+        }
+
+        .card-header {
+            padding: 1.25rem 1.5rem;
+            background: var(--card-bg);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.2s;
+        }
+
+        .card-header:hover {
+            background-color: #f1f3f5;
+        }
+
+        .card-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .card-header h2 i {
+            color: var(--accent-orange);
+        }
+
+        .card-header .toggle-icon {
+            color: var(--accent-orange);
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+            background-color: var(--card-bg);
+        }
+
+        .tool-card:not(.active) .card-body {
+            display: none;
+        }
+
+        .tool-card.active .card-header .toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        /* Grid Conversione Unità */
+        .converter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .converter-box {
+            background: var(--card-inner-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.25rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .converter-box h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--accent-cyan);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .input-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .input-row {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        input[type="number"], input[type="text"], select {
+            width: 100%;
+            padding: 0.65rem;
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 1rem;
+            outline: none;
+        }
+
+        input[type="number"]:focus, input[type="text"]:focus, select:focus {
+            border-color: var(--accent-orange);
+            box-shadow: 0 0 0 2px rgba(242, 101, 34, 0.15);
+        }
+
+        select option {
+            background-color: #ffffff;
+            color: var(--text-main);
+        }
+
+        .swap-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0.4rem 0;
+        }
+
+        .btn-swap {
+            background-color: #ffffff;
+            border: 1px solid var(--border-color);
+            color: var(--accent-orange);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+        }
+
+        .btn-swap:hover {
+            background-color: var(--accent-orange);
+            color: #ffffff;
+            border-color: var(--accent-orange);
+            transform: rotate(180deg);
+        }
+
+        .btn-action {
+            display: block;
+            width: 100%;
+            background-color: var(--accent-green);
+            color: #ffffff;
+            border: none;
+            padding: 1rem;
+            font-size: 1.05rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 1.5rem;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .btn-action:hover:not(:disabled) {
+            background-color: #2e7d32;
+        }
+
+        .btn-action:active:not(:disabled) {
+            transform: scale(0.99);
+        }
+
+        .btn-action:disabled {
+            background-color: #d1d5db;
+            color: #6b7280;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* STILI PER CONTENITORI DOCUMENTI CLIENTI */
+        .doc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .doc-box {
+            background: var(--card-inner-bg);
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            position: relative;
+            text-align: center;
+            transition: all 0.2s ease;
+            min-height: 130px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .doc-box:hover, .doc-box.dragover {
+            border-color: var(--accent-cyan);
+            background: #eef6fa;
+        }
+
+        .doc-box.has-file {
+            border-style: solid;
+            border-color: var(--accent-green);
+            background-color: rgba(27, 94, 32, 0.04);
+        }
+
+        .doc-box h4 {
+            font-size: 0.95rem;
+            color: var(--text-main);
+            margin-bottom: 0.3rem;
+            pointer-events: none;
+        }
+
+        .doc-box p {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .doc-box input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .doc-box .file-list {
+            margin-top: 0.6rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            width: 100%;
+        }
+
+        .doc-box .file-tag {
+            background-color: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 3px 6px;
+            font-size: 0.75rem;
+            color: var(--accent-green);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            word-break: break-all;
+        }
+
+        .doc-box .remove-doc {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: #e53e3e;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            z-index: 10;
+        }
+
+        .doc-box.has-file .remove-doc {
+            display: flex;
+        }
+
+        /* ===== STILI CALCOLATORE IVA BENI SIGNIFICATIVI ===== */
+        .iva-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 600px) {
+            .iva-form {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .iva-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .iva-input-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .iva-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .iva-input-wrapper input {
+            width: 100%;
+            padding: 0.75rem 2.5rem 0.75rem 0.85rem;
+            font-size: 1.1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--input-bg);
+            outline: none;
+        }
+
+        .iva-input-wrapper input:focus {
+            border-color: var(--accent-orange);
+            box-shadow: 0 0 0 2px rgba(242, 101, 34, 0.15);
+        }
+
+        .iva-currency {
+            position: absolute;
+            right: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .iva-results {
+            border-top: 2px dashed var(--border-color);
+            padding-top: 1.5rem;
+            display: none;
+        }
+
+        .iva-case-badge {
+            display: inline-block;
+            padding: 0.4rem 0.9rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 1.1rem;
+        }
+
+        .iva-case-1 {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .iva-case-2 {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .iva-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.25rem;
+        }
+
+        .iva-table th, .iva-table td {
+            padding: 0.7rem 0.8rem;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        .iva-table th {
+            color: var(--text-muted);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .iva-table td {
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .iva-table .number {
+            text-align: right;
+        }
+
+        .iva-summary {
+            background: var(--card-inner-bg);
+            border-radius: 8px;
+            padding: 1.1rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .iva-summary-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .iva-summary-item .label {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-bottom: 0.25rem;
+        }
+
+        .iva-summary-item .value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .iva-summary-item.total {
+            grid-column: span 2;
+        }
+
+        .iva-summary-item.total .value {
+            color: var(--accent-orange);
+            font-size: 1.35rem;
+        }
+
+        .iva-note {
+            margin-top: 1.1rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.45;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1><i class="fa-solid fa-fire-flame-curved"></i> Strumenti utili</h1>
+    </header>
+
+    <!-- SEZIONE 1: CONVERTITORE UNITA' DI MISURA -->
+    <div class="tool-card">
+        <div class="card-header" onclick="toggleCard(this)">
+            <h2><i class="fa-solid fa-calculator"></i> Conversione Unità Termoidrauliche</h2>
+            <i class="fa-solid fa-chevron-down toggle-icon"></i>
+        </div>
+        <div class="card-body">
+            <div class="converter-grid">
+                
+                <!-- 1. Pressione -->
+                <div class="converter-box">
+                    <h3><i class="fa-solid fa-gauge-high"></i> Pressione</h3>
+                    <div class="input-group">
+                        <label>Valore Input</label>
+                        <div class="input-row">
+                            <input type="number" id="press-in" value="1" oninput="convertPressure()">
+                            <select id="press-unit-in" onchange="convertPressure()">
+                                <option value="bar">bar</option>
+                                <option value="mbar">mbar</option>
+                                <option value="mca">m.c.a. (mH2O)</option>
+                                <option value="pascal">Pa</option>
+                                <option value="kpa">kPa</option>
+                                <option value="psi">psi</option>
+                                <option value="atm">atm</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="swap-container">
+                        <button class="btn-swap" onclick="swapConverter('press', convertPressure)" title="Inverti unità e valori">
+                            <i class="fa-solid fa-arrows-up-down"></i>
+                        </button>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Risultato</label>
+                        <div class="input-row">
+                            <input type="number" id="press-out" readonly>
+                            <select id="press-unit-out" onchange="convertPressure()">
+                                <option value="bar">bar</option>
+                                <option value="mbar">mbar</option>
+                                <option value="mca" selected>m.c.a. (mH2O)</option>
+                                <option value="pascal">Pa</option>
+                                <option value="kpa">kPa</option>
+                                <option value="psi">psi</option>
+                                <option value="atm">atm</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Potenza Termica -->
+                <div class="converter-box">
+                    <h3><i class="fa-solid fa-bolt"></i> Potenza Termica</h3>
+                    <div class="input-group">
+                        <label>Valore Input</label>
+                        <div class="input-row">
+                            <input type="number" id="power-in" value="24" oninput="convertPower()">
+                            <select id="power-unit-in" onchange="convertPower()">
+                                <option value="kw">kW</option>
+                                <option value="w">W</option>
+                                <option value="kcalh">kcal/h</option>
+                                <option value="btuh">BTU/h</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="swap-container">
+                        <button class="btn-swap" onclick="swapConverter('power', convertPower)" title="Inverti unità e valori">
+                            <i class="fa-solid fa-arrows-up-down"></i>
+                        </button>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Risultato</label>
+                        <div class="input-row">
+                            <input type="number" id="power-out" readonly>
+                            <select id="power-unit-out" onchange="convertPower()">
+                                <option value="kw">kW</option>
+                                <option value="w">W</option>
+                                <option value="kcalh" selected>kcal/h</option>
+                                <option value="btuh">BTU/h</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Portata idraulica -->
+                <div class="converter-box">
+                    <h3><i class="fa-solid fa-faucet-drip"></i> Portata</h3>
+                    <div class="input-group">
+                        <label>Valore Input</label>
+                        <div class="input-row">
+                            <input type="number" id="flow-in" value="1000" oninput="convertFlow()">
+                            <select id="flow-unit-in" onchange="convertFlow()">
+                                <option value="lh">l/h</option>
+                                <option value="lmin">l/min</option>
+                                <option value="ls">l/s</option>
+                                <option value="m3h">m³/h</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="swap-container">
+                        <button class="btn-swap" onclick="swapConverter('flow', convertFlow)" title="Inverti unità e valori">
+                            <i class="fa-solid fa-arrows-up-down"></i>
+                        </button>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Risultato</label>
+                        <div class="input-row">
+                            <input type="number" id="flow-out" readonly>
+                            <select id="flow-unit-out" onchange="convertFlow()">
+                                <option value="lh">l/h</option>
+                                <option value="lmin" selected>l/min</option>
+                                <option value="ls">l/s</option>
+                                <option value="m3h">m³/h</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Temperatura -->
+                <div class="converter-box">
+                    <h3><i class="fa-solid fa-temperature-three-quarters"></i> Temperatura</h3>
+                    <div class="input-group">
+                        <label>Valore Input</label>
+                        <div class="input-row">
+                            <input type="number" id="temp-in" value="50" oninput="convertTemp()">
+                            <select id="temp-unit-in" onchange="convertTemp()">
+                                <option value="c">°C (Celsius)</option>
+                                <option value="f">°F (Fahrenheit)</option>
+                                <option value="k">K (Kelvin)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="swap-container">
+                        <button class="btn-swap" onclick="swapConverter('temp', convertTemp)" title="Inverti unità e valori">
+                            <i class="fa-solid fa-arrows-up-down"></i>
+                        </button>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Risultato</label>
+                        <div class="input-row">
+                            <input type="number" id="temp-out" readonly>
+                            <select id="temp-unit-out" onchange="convertTemp()">
+                                <option value="c">°C (Celsius)</option>
+                                <option value="f" selected>°F (Fahrenheit)</option>
+                                <option value="k">K (Kelvin)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. Energia / Calore -->
+                <div class="converter-box">
+                    <h3><i class="fa-solid fa-charging-station"></i> Energia / Lavoro</h3>
+                    <div class="input-group">
+                        <label>Valore Input</label>
+                        <div class="input-row">
+                            <input type="number" id="energy-in" value="1" oninput="convertEnergy()">
+                            <select id="energy-unit-in" onchange="convertEnergy()">
+                                <option value="kwh">kWh</option>
+                                <option value="mj">MJ</option>
+                                <option value="kcal">kcal</option>
+                                <option value="btu">BTU</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="swap-container">
+                        <button class="btn-swap" onclick="swapConverter('energy', convertEnergy)" title="Inverti unità e valori">
+                            <i class="fa-solid fa-arrows-up-down"></i>
+                        </button>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Risultato</label>
+                        <div class="input-row">
+                            <input type="number" id="energy-out" readonly>
+                            <select id="energy-unit-out" onchange="convertEnergy()">
+                                <option value="kwh">kWh</option>
+                                <option value="mj" selected>MJ</option>
+                                <option value="kcal">kcal</option>
+                                <option value="btu">BTU</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. Volume / Capacità -->
+                <div class="converter-box">
+                    <h3><i class="fa-solid fa-cube"></i> Volume</h3>
+                    <div class="input-group">
+                        <label>Valore Input</label>
+                        <div class="input-row">
+                            <input type="number" id="vol-in" value="1" oninput="convertVolume()">
+                            <select id="vol-unit-in" onchange="convertVolume()">
+                                <option value="m3">m³</option>
+                                <option value="l">Litri (L)</option>
+                                <option value="gal">Galloni (US gal)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="swap-container">
+                        <button class="btn-swap" onclick="swapConverter('vol', convertVolume)" title="Inverti unità e valori">
+                            <i class="fa-solid fa-arrows-up-down"></i>
+                        </button>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Risultato</label>
+                        <div class="input-row">
+                            <input type="number" id="vol-out" readonly>
+                            <select id="vol-unit-out" onchange="convertVolume()">
+                                <option value="m3">m³</option>
+                                <option value="l" selected>Litri (L)</option>
+                                <option value="gal">Galloni (US gal)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== NUOVA SEZIONE: CALCOLATORE IVA BENI SIGNIFICATIVI ===== -->
+    <div class="tool-card">
+        <div class="card-header" onclick="toggleCard(this)">
+            <h2><i class="fa-solid fa-percent"></i> Calcolatore IVA Beni Significativi</h2>
+            <i class="fa-solid fa-chevron-down toggle-icon"></i>
+        </div>
+        <div class="card-body">
+            <p style="margin-bottom: 1.25rem; color: var(--text-muted); font-size: 0.95rem;">
+                Calcolo automatico dell’aliquota IVA al 10% e 22% per caldaie, condizionatori e altri beni significativi.
+            </p>
+
+            <div class="iva-form">
+                <div class="iva-input-group">
+                    <label for="valoreBene">Valore Bene Significativo (es. Caldaia / Condizionatore)</label>
+                    <div class="iva-input-wrapper">
+                        <input type="number" id="valoreBene" step="0.01" placeholder="0.00" oninput="calcolaIVA()">
+                        <span class="iva-currency">€</span>
+                    </div>
+                </div>
+                <div class="iva-input-group">
+                    <label for="valoreManodopera">Valore Manodopera e Altri Materiali</label>
+                    <div class="iva-input-wrapper">
+                        <input type="number" id="valoreManodopera" step="0.01" placeholder="0.00" oninput="calcolaIVA()">
+                        <span class="iva-currency">€</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="ivaResults" class="iva-results">
+                <div id="caseBadge" class="iva-case-badge"></div>
+
+                <table class="iva-table">
+                    <thead>
+                        <tr>
+                            <th>Tipologia IVA</th>
+                            <th class="number">Imponibile</th>
+                            <th class="number">Imposta IVA</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>IVA 10%</strong> (Agevolata)</td>
+                            <td class="number" id="imp10">0,00 €</td>
+                            <td class="number" id="iva10">0,00 €</td>
+                        </tr>
+                        <tr>
+                            <td><strong>IVA 22%</strong> (Ordinaria)</td>
+                            <td class="number" id="imp22">0,00 €</td>
+                            <td class="number" id="iva22">0,00 €</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="iva-summary">
+                    <div class="iva-summary-item">
+                        <span class="label">Totale Imponibile</span>
+                        <span class="value" id="totImponibile">0,00 €</span>
+                    </div>
+                    <div class="iva-summary-item">
+                        <span class="label">Totale IVA</span>
+                        <span class="value" id="totIVA">0,00 €</span>
+                    </div>
+                    <div class="iva-summary-item total">
+                        <span class="label">Totale Fattura (Lordo)</span>
+                        <span class="value" id="totFattura">0,00 €</span>
+                    </div>
+                </div>
+
+                <p class="iva-note" id="explanNote"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEZIONE: IMPORTA PDF UNICO MULTI-PAGINA -->
+    <div class="tool-card">
+        <div class="card-header" onclick="toggleCard(this)">
+            <h2><i class="fa-solid fa-file-pdf"></i> Importa PDF Unico Multi-Pagina (Smistamento Avanzato)</h2>
+            <i class="fa-solid fa-chevron-down toggle-icon"></i>
+        </div>
+        <div class="card-body">
+            <div class="doc-box" style="border: 2px dashed var(--accent-orange);" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDropMultiPDF(event)">
+                <h4><i class="fa-solid fa-layer-group" style="color: var(--accent-orange);"></i> Trascina qui il PDF cumulativo di tutte le pratiche</h4>
+                <p>Visualizza l'anteprima ingrandita delle pagine e smistale facilmente.</p>
+                <input type="file" accept="application/pdf" onchange="handleMultiPDFSelect(event)">
+            </div>
+        </div>
+    </div>
+
+    <!-- SEZIONE 2: ARCHIVIO DOCUMENTI CLIENTE -->
+    <div class="tool-card active" id="archive-card">
+        <div class="card-header" onclick="toggleCard(this)">
+            <h2><i class="fa-solid fa-folder-open"></i> Archivio Documenti Cliente (Convertitore e Salvataggio PDF)</h2>
+            <i class="fa-solid fa-chevron-down toggle-icon"></i>
+        </div>
+        <div class="card-body">
+            <p style="margin-bottom: 1.2rem; color: var(--text-muted); font-size: 0.95rem;">
+                Trascina o seleziona uno o più file nei contenitori (es. <strong>Fronte e Retro</strong> per Documenti e Tessera Sanitaria). I file multipli dello stesso box verranno uniti automaticamente in un unico PDF.
+            </p>
+
+            <div class="doc-grid" id="doc-grid-container">
+                <!-- Generato dinamicamente -->
+            </div>
+
+            <button class="btn-action" id="saveDocsBtn" onclick="saveAllDocsToFolder()" disabled>
+                <i class="fa-solid fa-floppy-disk"></i> Salva Tutti i PDF nella Cartella...
+            </button>
+        </div>
+    </div>
+
+    <!-- MODALE DI ANTEPRIMA GRANDISSIMA E MAPPATURA PAGINE PDF -->
+    <div id="multiPdfModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:1000; justify-content:center; align-items:center; padding: 1rem;">
+        <div style="background:var(--card-bg); width:100%; max-width:1300px; height:96vh; border-radius:var(--radius); display:flex; flex-direction:column; overflow:hidden; box-shadow: var(--shadow);">
+            
+            <!-- Header Modale -->
+            <div style="padding: 1rem 1.5rem; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; background: #ffffff;">
+                <h3 style="font-size: 1.25rem; display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-magnifying-glass-plus" style="color:var(--accent-orange);"></i> Anteprima Grandissima & Smistamento Pagine PDF</h3>
+                <button onclick="closeMultiPdfModal()" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--text-muted);"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Info File -->
+            <div style="padding: 0.75rem 1.5rem; background: var(--card-inner-bg); border-bottom: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                <span id="multiPdfInfo" style="font-size: 0.95rem; color: var(--text-main);">Caricamento in corso...</span>
+            </div>
+
+            <!-- Contenuto: 2 Colonne -->
+            <div style="display: flex; flex: 1; overflow: hidden; background: #f1f3f5;">
+                
+                <!-- Colonna Sinistra: Anteprima Pagine Grandi -->
+                <div style="flex: 1.2; padding: 1.25rem; overflow-y: auto; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 1rem;">
+                    <h4 style="font-size: 1rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fa-solid fa-images"></i> Pagine del Documento (Vista Dettagliata)
+                    </h4>
+                    <div id="pdfThumbnailsGrid" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                        <!-- Canvas ad alta risoluzione generati via JS -->
+                    </div>
+                </div>
+
+                <!-- Colonna Destra: Pannello Regole di Smistamento -->
+                <div style="flex: 1; padding: 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; background: #ffffff;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h4 style="font-size: 1rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fa-solid fa-list-check"></i> Regole di Smistamento
+                        </h4>
+                        <button class="btn-action" style="margin:0; width:auto; padding: 0.4rem 0.8rem; font-size:0.85rem; background: var(--accent-cyan);" onclick="addMappingRuleRow()">
+                            <i class="fa-solid fa-plus"></i> Aggiungi Regola
+                        </button>
+                    </div>
+                    
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">
+                        Indica il numero della pagina (es. <code>1</code>) o l'intervallo (es. <code>2-3</code>) e seleziona a quale box dell'archivio assegnarlo.
+                    </p>
+
+                    <div id="mappingRulesContainer" style="display:flex; flex-direction:column; gap: 0.75rem;">
+                        <!-- Righe di regole dinamiche -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer Modale -->
+            <div style="padding: 1rem 1.5rem; border-top:1px solid var(--border-color); display:flex; justify-content:flex-end; gap: 1rem; background: var(--card-inner-bg);">
+                <button class="btn-action" style="margin:0; width:auto; background:#6c757d; padding: 0.6rem 1.2rem;" onclick="closeMultiPdfModal()">Annulla</button>
+                <button class="btn-action" style="margin:0; width:auto; padding: 0.6rem 1.8rem;" onclick="executePdfSplitting()">Conferma e Smista nei Box</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleCard(headerElement) {
+            const card = headerElement.parentElement;
+            card.classList.toggle('active');
+        }
+
+        const clientDocs = {};
+
+        const docNames = [
+            { id: 1, name: "Anagrafica + privacy", icon: "fa-file-signature", desc: "Trascina file o clicca" },
+            { id: 2, name: "Preventivo firmato", icon: "fa-file-contract", desc: "Trascina file o clicca" },
+            { id: 3, name: "Dichiarazione IVA agevolata", icon: "fa-percent", desc: "Trascina file o clicca" },
+            { id: 4, name: "Modulo Enea", icon: "fa-leaf", desc: "Trascina file o clicca" },
+            { id: 5, name: "Documento di identità", icon: "fa-id-card", desc: "Fronte e Retro (o PDF)" },
+            { id: 6, name: "Tessera sanitaria", icon: "fa-credit-card", desc: "Fronte e Retro (o PDF)" },
+            { id: 7, name: "Richiesta dati finanziamento", icon: "fa-piggy-bank", desc: "Trascina file o clicca" },
+            { id: 8, name: "Modulo di consegna", icon: "fa-truck-ramp-box", desc: "Trascina file o clicca" },
+            { id: 9, name: "Busta paga", icon: "fa-money-bill-wave", desc: "Trascina file o clicca" },
+            { id: 10, name: "Cedolino pensione", icon: "fa-receipt", desc: "Trascina file o clicca" },
+            { id: 11, name: "Dichiarazione dei redditi", icon: "fa-file-invoice-dollar", desc: "Trascina file o clicca" }
+        ];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const gridContainer = document.getElementById('doc-grid-container');
+            if (gridContainer) {
+                gridContainer.innerHTML = docNames.map(doc => `
+                    <div class="doc-box" id="box-${doc.id}" data-name="${doc.name}" 
+                         ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, ${doc.id})">
+                        <button class="remove-doc" onclick="clearDocBox(event, ${doc.id})" title="Svuota box"><i class="fa-solid fa-xmark"></i></button>
+                        <h4><i class="fa-solid ${doc.icon}"></i> ${doc.name}</h4>
+                        <p>${doc.desc}</p>
+                        <input type="file" accept="image/*,application/pdf" multiple onchange="handleDocFile(event, ${doc.id})">
+                        <div class="file-list" id="list-${doc.id}"></div>
+                    </div>
+                `).join('');
+            }
+            
+            convertPressure();
+            convertPower();
+            convertFlow();
+            convertTemp();
+            convertEnergy();
+            convertVolume();
+        });
+
+        function handleDocFile(event, boxId) {
+            const files = event.target.files;
+            if (files && files.length > 0) {
+                processFiles(files, boxId);
+            }
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+        }
+
+        function handleDrop(e, boxId) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files && files.length > 0) {
+                processFiles(files, boxId);
+            }
+        }
+
+        function processFiles(files, boxId) {
+            if (!clientDocs[boxId]) {
+                clientDocs[boxId] = [];
+            }
+            for (let file of files) {
+                clientDocs[boxId].push(file);
+            }
+            updateDocBoxUI(boxId);
+            checkSaveButtonState();
+        }
+
+        function updateDocBoxUI(boxId) {
+            const box = document.getElementById(`box-${boxId}`);
+            const listContainer = document.getElementById(`list-${boxId}`);
+            const files = clientDocs[boxId];
+
+            if (files && files.length > 0) {
+                box.classList.add('has-file');
+                listContainer.innerHTML = files.map((f, index) => `
+                    <div class="file-tag">
+                        <span><i class="fa-solid fa-file-arrow-up"></i> ${f.name}</span>
+                    </div>
+                `).join('');
+            } else {
+                box.classList.remove('has-file');
+                listContainer.innerHTML = '';
+            }
+        }
+
+        function clearDocBox(event, boxId) {
+            event.stopPropagation();
+            delete clientDocs[boxId];
+            const box = document.getElementById(`box-${boxId}`);
+            const fileInput = box.querySelector('input[type="file"]');
+            fileInput.value = '';
+            updateDocBoxUI(boxId);
+            checkSaveButtonState();
+        }
+
+        function checkSaveButtonState() {
+            const btn = document.getElementById('saveDocsBtn');
+            const hasAny = Object.keys(clientDocs).some(id => clientDocs[id] && clientDocs[id].length > 0);
+            btn.disabled = !hasAny;
+        }
+
+        async function saveAllDocsToFolder() {
+            for (const boxId in clientDocs) {
+                const files = clientDocs[boxId];
+                if (!files || files.length === 0) continue;
+
+                const docInfo = docNames.find(d => d.id == boxId);
+                const pdfDoc = await PDFLib.PDFDocument.create();
+
+                for (let file of files) {
+                    const arrayBuffer = await file.arrayBuffer();
+                    if (file.type === 'application/pdf') {
+                        try {
+                            const donorPdf = await PDFLib.PDFDocument.load(arrayBuffer);
+                            const copiedPages = await pdfDoc.copyPages(donorPdf, donorPdf.getPageIndices());
+                            copiedPages.forEach(p => pdfDoc.addPage(p));
+                        } catch (err) {
+                            console.error("Errore caricamento PDF:", err);
+                        }
+                    } else if (file.type.startsWith('image/')) {
+                        let embeddedImage;
+                        if (file.type.includes('png')) {
+                            embeddedImage = await pdfDoc.embedPng(arrayBuffer);
+                        } else {
+                            embeddedImage = await pdfDoc.embedJpg(arrayBuffer);
+                        }
+                        const page = pdfDoc.addPage([embeddedImage.width, embeddedImage.height]);
+                        page.drawImage(embeddedImage, {
+                            x: 0,
+                            y: 0,
+                            width: embeddedImage.width,
+                            height: embeddedImage.height,
+                        });
+                    }
+                }
+
+                const pdfBytes = await pdfDoc.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `${docInfo.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+                link.click();
+            }
+        }
+
+        // --- GESTIONE SMISTAMENTO MULTI-PAGINA CON ANTEPRIMA GRANDISSIMA ---
+        let loadedMasterPdfDoc = null;
+        let masterPdfArrayBuffer = null;
+        let masterFileName = "";
+        let totalPdfPages = 0;
+        let pdfJsDocInstance = null;
+
+        function handleMultiPDFSelect(event) {
+            const file = event.target.files[0];
+            if (file) processMasterPdfFile(file);
+        }
+
+        function handleDropMultiPDF(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) processMasterPdfFile(file);
+        }
+
+        async function processMasterPdfFile(file) {
+            masterFileName = file.name;
+            masterPdfArrayBuffer = await file.arrayBuffer();
+            
+            try {
+                loadedMasterPdfDoc = await PDFLib.PDFDocument.load(masterPdfArrayBuffer);
+                totalPdfPages = loadedMasterPdfDoc.getPageCount();
+
+                const uint8Array = new Uint8Array(masterPdfArrayBuffer);
+                pdfJsDocInstance = await pdfjsLib.getDocument({ data: uint8Array }).promise;
+                
+                document.getElementById('multiPdfInfo').innerHTML = `File: <strong>${masterFileName}</strong> (Totale Pagine: <strong>${totalPdfPages}</strong>)`;
+                document.getElementById('multiPdfModal').style.display = 'flex';
+
+                await renderLargePdfThumbnails();
+                
+                document.getElementById('mappingRulesContainer').innerHTML = '';
+                addMappingRuleRow();
+            } catch (err) {
+                alert("Errore nella lettura del file PDF.");
+                console.error(err);
+            }
+        }
+
+        async function renderLargePdfThumbnails() {
+            const grid = document.getElementById('pdfThumbnailsGrid');
+            grid.innerHTML = '';
+
+            for (let i = 1; i <= totalPdfPages; i++) {
+                const wrapper = document.createElement('div');
+                wrapper.style.cssText = "background:#ffffff; border:1px solid var(--border-color); border-radius:8px; padding:0.75rem; box-shadow: 0 2px 6px rgba(0,0,0,0.05); display:flex; flex-direction:column; align-items:center; gap:0.5rem;";
+                
+                const label = document.createElement('div');
+                label.style.cssText = "font-size:0.95rem; font-weight:700; color:var(--accent-orange); width:100%; text-align:left; border-bottom:1px solid #eee; padding-bottom:0.3rem;";
+                label.innerHTML = `<i class="fa-solid fa-file-lines"></i> Pagina ${i}`;
+                wrapper.appendChild(label);
+
+                const canvas = document.createElement('canvas');
+                canvas.style.cssText = "width: 100%; height: auto; border: 1px solid var(--border-color); border-radius: 4px; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);";
+                wrapper.appendChild(canvas);
+
+                grid.appendChild(wrapper);
+
+                try {
+                    const page = await pdfJsDocInstance.getPage(i);
+                    const viewport = page.getViewport({ scale: 1.2 }); 
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    const context = canvas.getContext('2d');
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+                } catch (e) {
+                    console.error(`Errore rendering anteprima pagina ${i}`, e);
+                }
+            }
+        }
+
+        function addMappingRuleRow() {
+            const container = document.getElementById('mappingRulesContainer');
+            const optionsHtml = docNames.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+            const rowId = 'rule-' + Date.now() + Math.random().toString(36).substr(2, 5);
+
+            const rowHtml = `
+                <div class="rule-row" id="${rowId}" style="display:flex; gap:0.75rem; align-items:center; background:var(--card-inner-bg); padding:0.75rem; border:1px solid var(--border-color); border-radius:8px;">
+                    <div style="flex: 1;">
+                        <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:0.2rem;">N° Pagina / Intervallo</label>
+                        <input type="text" class="rule-pages" placeholder="es. 1 o 2-3" style="padding:0.5rem; font-size:0.9rem;">
+                    </div>
+                    <div style="flex: 1.8;">
+                        <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:0.2rem;">Destinazione Box</label>
+                        <select class="rule-target" style="padding:0.5rem; font-size:0.9rem;">
+                            <option value="">-- Seleziona Box --</option>
+                            ${optionsHtml}
+                        </select>
+                    </div>
+                    <button onclick="document.getElementById('${rowId}').remove()" style="background:none; border:none; color:#e53e3e; cursor:pointer; font-size:1.1rem; padding-top:1.1rem;" title="Elimina regola">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', rowHtml);
+        }
+
+        function closeMultiPdfModal() {
+            document.getElementById('multiPdfModal').style.display = 'none';
+            loadedMasterPdfDoc = null;
+            masterPdfArrayBuffer = null;
+            pdfJsDocInstance = null;
+        }
+
+        async function executePdfSplitting() {
+            if (!loadedMasterPdfDoc) return;
+
+            const ruleRows = document.querySelectorAll('.rule-row');
+            let assignedCount = 0;
+
+            for (let row of ruleRows) {
+                const pagesInput = row.querySelector('.rule-pages').value.trim();
+                const targetBoxId = row.querySelector('.rule-target').value;
+
+                if (!pagesInput || !targetBoxId) continue;
+
+                const pageIndices = parsePageRangeString(pagesInput, totalPdfPages);
+                if (pageIndices.length > 0) {
+                    const subPdf = await PDFLib.PDFDocument.create();
+                    const copiedPages = await subPdf.copyPages(loadedMasterPdfDoc, pageIndices);
+                    copiedPages.forEach(p => subPdf.addPage(p));
+
+                    const pdfBytes = await subPdf.save();
+                    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                    const splitFile = new File([blob], `estratto_pag_${pagesInput}_${masterFileName}`, { type: 'application/pdf' });
+
+                    processFiles([splitFile], parseInt(targetBoxId));
+                    assignedCount++;
+                }
+            }
+
+            if (assignedCount > 0) {
+                closeMultiPdfModal();
+                
+                const archiveCard = document.getElementById('archive-card');
+                archiveCard.classList.add('active');
+                archiveCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                archiveCard.classList.add('highlight-card');
+                setTimeout(() => {
+                    archiveCard.classList.remove('highlight-card');
+                }, 2000);
+            } else {
+                alert("Inserisci almeno un intervallo di pagine valido e seleziona il box di destinazione.");
+            }
+        }
+
+        function parsePageRangeString(str, maxPages) {
+            let indices = [];
+            let parts = str.split(',');
+            parts.forEach(part => {
+                if (part.includes('-')) {
+                    let range = part.split('-');
+                    let start = parseInt(range[0].trim()) - 1;
+                    let end = parseInt(range[1].trim()) - 1;
+                    for (let i = start; i <= end && i < maxPages; i++) {
+                        if (i >= 0) indices.push(i);
+                    }
+                } else {
+                    let p = parseInt(part.trim()) - 1;
+                    if (p >= 0 && p < maxPages) indices.push(p);
+                }
+            });
+            return [...new Set(indices)];
+        }
+
+        // --- CONVERTITORI TERMOIDRAULICI ---
+        function swapConverter(type, callback) {
+            const valIn = document.getElementById(`${type}-in`);
+            const valOut = document.getElementById(`${type}-out`);
+            const unitIn = document.getElementById(`${type}-unit-in`);
+            const unitOut = document.getElementById(`${type}-unit-out`);
+
+            const tempVal = valIn.value;
+            valIn.value = valOut.value;
+            
+            const tempUnit = unitIn.value;
+            unitIn.value = unitOut.value;
+            unitOut.value = tempUnit;
+
+            callback();
+        }
+
+        function convertPressure() {
+            const val = parseFloat(document.getElementById('press-in').value) || 0;
+            const uIn = document.getElementById('press-unit-in').value;
+            const uOut = document.getElementById('press-unit-out').value;
+
+            let inBar = 0;
+            switch(uIn) {
+                case 'bar': inBar = val; break;
+                case 'mbar': inBar = val / 1000; break;
+                case 'mca': inBar = val / 10.1972; break;
+                case 'pascal': inBar = val / 100000; break;
+                case 'kpa': inBar = val / 100; break;
+                case 'psi': inBar = val / 14.5038; break;
+                case 'atm': inBar = val / 0.986923; break;
+            }
+
+            let res = 0;
+            switch(uOut) {
+                case 'bar': res = inBar; break;
+                case 'mbar': res = inBar * 1000; break;
+                case 'mca': res = inBar * 10.1972; break;
+                case 'pascal': res = inBar * 100000; break;
+                case 'kpa': res = inBar * 100; break;
+                case 'psi': res = inBar * 14.5038; break;
+                case 'atm': res = inBar * 0.986923; break;
+            }
+            document.getElementById('press-out').value = res.toFixed(4);
+        }
+
+        function convertPower() {
+            const val = parseFloat(document.getElementById('power-in').value) || 0;
+            const uIn = document.getElementById('power-unit-in').value;
+            const uOut = document.getElementById('power-unit-out').value;
+
+            let inKw = 0;
+            switch(uIn) {
+                case 'kw': inKw = val; break;
+                case 'w': inKw = val / 1000; break;
+                case 'kcalh': inKw = val / 860.421; break;
+                case 'btuh': inKw = val / 3412.14; break;
+            }
+
+            let res = 0;
+            switch(uOut) {
+                case 'kw': res = inKw; break;
+                case 'w': res = inKw * 1000; break;
+                case 'kcalh': res = inKw * 860.421; break;
+                case 'btuh': res = inKw * 3412.14; break;
+            }
+            document.getElementById('power-out').value = res.toFixed(2);
+        }
+
+        function convertFlow() {
+            const val = parseFloat(document.getElementById('flow-in').value) || 0;
+            const uIn = document.getElementById('flow-unit-in').value;
+            const uOut = document.getElementById('flow-unit-out').value;
+
+            let inM3h = 0;
+            switch(uIn) {
+                case 'lh': inM3h = val / 1000; break;
+                case 'lmin': inM3h = val * 60 / 1000; break;
+                case 'ls': inM3h = val * 3600 / 1000; break;
+                case 'm3h': inM3h = val; break;
+            }
+
+            let res = 0;
+            switch(uOut) {
+                case 'lh': res = inM3h * 1000; break;
+                case 'lmin': res = inM3h * 1000 / 60; break;
+                case 'ls': res = inM3h * 1000 / 3600; break;
+                case 'm3h': res = inM3h; break;
+            }
+            document.getElementById('flow-out').value = res.toFixed(2);
+        }
+
+        function convertTemp() {
+            const val = parseFloat(document.getElementById('temp-in').value) || 0;
+            const uIn = document.getElementById('temp-unit-in').value;
+            const uOut = document.getElementById('temp-unit-out').value;
+
+            let inC = 0;
+            if(uIn === 'c') inC = val;
+            else if(uIn === 'f') inC = (val - 32) * 5/9;
+            else if(uIn === 'k') inC = val - 273.15;
+
+            let res = 0;
+            if(uOut === 'c') res = inC;
+            else if(uOut === 'f') res = (inC * 9/5) + 32;
+            else if(uOut === 'k') res = inC + 273.15;
+
+            document.getElementById('temp-out').value = res.toFixed(2);
+        }
+
+        function convertEnergy() {
+            const val = parseFloat(document.getElementById('energy-in').value) || 0;
+            const uIn = document.getElementById('energy-unit-in').value;
+            const uOut = document.getElementById('energy-unit-out').value;
+
+            let inKwh = 0;
+            switch(uIn) {
+                case 'kwh': inKwh = val; break;
+                case 'mj': inKwh = val / 3.6; break;
+                case 'kcal': inKwh = val / 860.421; break;
+                case 'btu': inKwh = val / 3412.14; break;
+            }
+
+            let res = 0;
+            switch(uOut) {
+                case 'kwh': res = inKwh; break;
+                case 'mj': res = inKwh * 3.6; break;
+                case 'kcal': res = inKwh * 860.421; break;
+                case 'btu': res = inKwh * 3412.14; break;
+            }
+            document.getElementById('energy-out').value = res.toFixed(2);
+        }
+
+        function convertVolume() {
+            const val = parseFloat(document.getElementById('vol-in').value) || 0;
+            const uIn = document.getElementById('vol-unit-in').value;
+            const uOut = document.getElementById('vol-unit-out').value;
+
+            let inL = 0;
+            switch(uIn) {
+                case 'm3': inL = val * 1000; break;
+                case 'l': inL = val; break;
+                case 'gal': inL = val * 3.78541; break;
+            }
+
+            let res = 0;
+            switch(uOut) {
+                case 'm3': res = inL / 1000; break;
+                case 'l': res = inL; break;
+                case 'gal': res = inL / 3.78541; break;
+            }
+            document.getElementById('vol-out').value = res.toFixed(2);
+        }
+
+        // ===== CALCOLATORE IVA BENI SIGNIFICATIVI =====
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(val);
+        }
+
+        function calcolaIVA() {
+            const bene = parseFloat(document.getElementById('valoreBene').value) || 0;
+            const manodopera = parseFloat(document.getElementById('valoreManodopera').value) || 0;
+            const resultsDiv = document.getElementById('ivaResults');
+
+            if (bene <= 0 && manodopera <= 0) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
+
+            resultsDiv.style.display = 'block';
+
+            const totaleImponibile = bene + manodopera;
+            const sogliaMeta = totaleImponibile / 2;
+
+            let imp10 = 0;
+            let imp22 = 0;
+
+            const caseBadge = document.getElementById('caseBadge');
+            const explanNote = document.getElementById('explanNote');
+
+            if (bene <= sogliaMeta) {
+                // Caso 1: il bene è ≤ 50% del totale
+                imp10 = totaleImponibile;
+                imp22 = 0;
+                caseBadge.className = "iva-case-badge iva-case-1";
+                caseBadge.textContent = "CASO 1: Bene Significativo ≤ 50% del Totale";
+                explanNote.textContent = "Poiché il valore del bene significativo non supera il 50% dell'importo totale della prestazione, l'intero imponibile beneficia dell'IVA agevolata al 10%.";
+            } else {
+                // Caso 2: il bene è > 50% del totale
+                imp10 = manodopera * 2;
+                imp22 = totaleImponibile - imp10;
+                caseBadge.className = "iva-case-badge iva-case-2";
+                caseBadge.textContent = "CASO 2: Bene Significativo > 50% del Totale";
+                explanNote.innerHTML = `Il valore del bene supera il 50% del totale. L'IVA al 10% si applica sulla manodopera/materiali (${formatCurrency(manodopera)}) e su una pari quota del bene (${formatCurrency(manodopera)}). La parte rimanente del bene (${formatCurrency(imp22)}) sconta l'IVA ordinaria al 22%.`;
+            }
+
+            const iva10Val = imp10 * 0.10;
+            const iva22Val = imp22 * 0.22;
+            const totIVAVal = iva10Val + iva22Val;
+            const totFatturaVal = totaleImponibile + totIVAVal;
+
+            document.getElementById('imp10').textContent = formatCurrency(imp10);
+            document.getElementById('iva10').textContent = formatCurrency(iva10Val);
+            document.getElementById('imp22').textContent = formatCurrency(imp22);
+            document.getElementById('iva22').textContent = formatCurrency(iva22Val);
+            document.getElementById('totImponibile').textContent = formatCurrency(totaleImponibile);
+            document.getElementById('totIVA').textContent = formatCurrency(totIVAVal);
+            document.getElementById('totFattura').textContent = formatCurrency(totFatturaVal);
+        }
+    </script>
+</body>
+</html>
