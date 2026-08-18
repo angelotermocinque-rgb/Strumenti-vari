@@ -57,10 +57,16 @@
         body {
             background-color: var(--bg-light);
             color: var(--text-main);
-            padding: 2.5rem 1rem;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            padding-top: 52px;
+        }
+
+        .page-wrap {
             max-width: 1000px;
             margin: 0 auto;
-            min-height: 100vh;
+            padding: 2.5rem 1rem;
         }
 
         header {
@@ -101,11 +107,99 @@
             gap: 0.75rem;
         }
 
-        /* Toggle Dark Mode - alto a destra */
+        /* Barra navigazione stile portale — tutta la larghezza */
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 900;
+            background: #1a1a1a;
+            border-bottom: 1px solid #333;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        }
+
+        .top-nav-inner {
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            padding: 0 1.5rem;
+            height: 52px;
+            overflow-x: auto;
+            scrollbar-width: thin;
+        }
+
+        .top-nav-links {
+            display: flex;
+            align-items: center;
+            justify-content: space-evenly;
+            flex: 1;
+            gap: 0.25rem;
+            min-width: 0;
+        }
+
+        .top-nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.95rem;
+            text-decoration: none;
+            padding: 0 1rem 0 0;
+            margin-right: 0.5rem;
+            border-right: 1px solid #444;
+            height: 30px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .top-nav-brand img {
+            width: 28px;
+            height: 28px;
+            border-radius: 5px;
+            object-fit: contain;
+            background: #0a0a0a;
+        }
+
+        .top-nav a.nav-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.5rem 0.85rem;
+            color: #e8e8e8;
+            text-decoration: none;
+            font-size: 0.92rem;
+            font-weight: 500;
+            white-space: nowrap;
+            border-radius: 5px;
+            transition: background 0.15s, color 0.15s;
+            flex-shrink: 0;
+        }
+
+        .top-nav a.nav-item i {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .top-nav a.nav-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+
+        .top-nav a.nav-item:hover i {
+            color: var(--accent-orange);
+            opacity: 1;
+        }
+
+        /* Toggle Dark Mode — a destra nell'header, staccato dal bordo */
         .theme-toggle-wrap {
             position: absolute;
-            top: 0;
-            right: 0;
+            top: 0.35rem;
+            right: 1.25rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -193,11 +287,22 @@
             opacity: 1;
         }
 
-        @media (max-width: 500px) {
+        @media (max-width: 700px) {
+            .top-nav-inner {
+                padding: 0 0.75rem;
+                height: 48px;
+            }
+            .top-nav a.nav-item {
+                font-size: 0.85rem;
+                padding: 0.4rem 0.55rem;
+            }
+            .theme-toggle-wrap .theme-label {
+                display: none;
+            }
             .theme-toggle-wrap {
-                position: static;
-                justify-content: center;
-                margin-top: 0.75rem;
+                margin-left: 0.35rem;
+                padding-left: 0.5rem;
+                padding-right: 0.15rem;
             }
         }
 
@@ -555,6 +660,12 @@
             height: 100%;
             opacity: 0;
             cursor: pointer;
+            z-index: 1;
+        }
+
+        /* Quando c'è già un file, l'input non intercetta i click sui pulsanti */
+        .doc-box.has-file input[type="file"] {
+            pointer-events: none;
         }
 
         .doc-box .file-list {
@@ -563,6 +674,9 @@
             flex-direction: column;
             gap: 0.25rem;
             width: 100%;
+            position: relative;
+            z-index: 2;
+            pointer-events: none;
         }
 
         .doc-box .file-tag {
@@ -594,7 +708,7 @@
             align-items: center;
             justify-content: center;
             font-size: 0.75rem;
-            z-index: 10;
+            z-index: 15;
         }
 
         .doc-box.has-file .remove-doc {
@@ -607,6 +721,9 @@
             margin-top: 0.5rem;
             width: 100%;
             justify-content: center;
+            position: relative;
+            z-index: 15;
+            pointer-events: auto;
         }
 
         .doc-box.has-file .box-actions {
@@ -624,6 +741,8 @@
             display: flex;
             align-items: center;
             gap: 0.3rem;
+            position: relative;
+            z-index: 15;
         }
 
         .btn-box-action:hover {
@@ -633,7 +752,7 @@
         }
 
         .reorder-page-item {
-            background: #fff;
+            background: var(--card-bg);
             border: 2px solid var(--border-color);
             border-radius: 8px;
             padding: 0.5rem;
@@ -870,7 +989,7 @@
             <img class="logo-t5" src="data:image/png;base64,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UmVhZHlxyWU8AAADJ2lUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNy4xLWMwMDAgNzkuYjBmOGJlOTAsIDIwMjEvMTIvMTUtMjE6MjU6MTUgICAgICAgICI+IDxyZGY6UkRGIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyI+IDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bXA6Q3JlYXRvclRvb2w9IkFkb2JlIFBob3Rvc2hvcCAyMy4yIChNYWNpbnRvc2gpIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOkE5NEUxMzdEOTYyNzExRUM5M0FFQkIwMzA1NTg5MEUwIiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOkE5NEUxMzdFOTYyNzExRUM5M0FFQkIwMzA1NTg5MEUwIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6QTk0RTEzN0I5NjI3MTFFQzkzQUVCQjAzMDU1ODkwRTAiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6QTk0RTEzN0M5NjI3MTFFQzkzQUVCQjAzMDU1ODkwRTAiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz4VBlaJAAAHBElEQVR42uycC0xTVxjHBy0PW2gRkWdB3gIiw2cEFdFNUXQqghDdcOLUTZwPXMRNs7hM2NBkW7It0wWViCjqUAhONIjM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" alt="Logo T5" width="64" height="64">
             <h1><i class="fa-solid fa-fire-flame-curved"></i> Strumenti utili</h1>
         </div>
-        <div class="theme-toggle-wrap">
+        <div class="theme-toggle-wrap" title="Modalità scura">
             <span class="theme-label"><i class="fa-solid fa-sun"></i></span>
             <label class="theme-switch" title="Attiva / disattiva modalità scura">
                 <input type="checkbox" id="darkModeToggle">
@@ -882,6 +1001,39 @@
             <span class="theme-label"><i class="fa-solid fa-moon"></i></span>
         </div>
     </header>
+
+    <nav class="top-nav" aria-label="Collegamenti rapidi">
+        <div class="top-nav-inner">
+            <div class="top-nav-links">
+                <a class="nav-item" href="http://portalone.termocinque.it:8080/commesse/ore/" target="_blank" rel="noopener noreferrer">
+                    <i class="fa-solid fa-clock"></i> Le mie ore
+                </a>
+                <a class="nav-item" href="http://portalone.termocinque.it:8080/cald/" target="_blank" rel="noopener noreferrer">
+                    <i class="fa-solid fa-fire-flame-curved"></i> Sopralluoghi caldaie
+                </a>
+                <a class="nav-item" href="http://portalone.termocinque.it:8080/cond/" target="_blank" rel="noopener noreferrer">
+                    <i class="fa-solid fa-snowflake"></i> Sopralluoghi condizionatori
+                </a>
+                <a class="nav-item" href="http://portalone.termocinque.it:8080/preventivi/" target="_blank" rel="noopener noreferrer">
+                    <i class="fa-solid fa-file-invoice"></i> Preventivi caldaie
+                </a>
+                <a class="nav-item" href="http://portalone.termocinque.it:8080/preventivi/cond/" target="_blank" rel="noopener noreferrer">
+                    <i class="fa-solid fa-file-signature"></i> Preventivi condizionatori
+                </a>
+                <a class="nav-item" href="https://docs.google.com/spreadsheets/d/15hQzDlteHlkVa2ewE5Q39MA8rzYpf7GON_JDW5INC10/edit?pli=1&gid=0#gid=0" target="_blank" rel="noopener noreferrer">
+                    <i class="fa-solid fa-table"></i> File caldaie/condizionatori
+                </a>
+                <a class="nav-item" href="https://termocinque-my.sharepoint.com/:x:/r/personal/azienda_termocinque_onmicrosoft_com/_layouts/15/guestaccess.aspx?e=4%3AUiwO5j&at=9&CID=6E040A40-8EAE-4355-ACCE-7BADA149F9BF&wdLOR=c9348782C-D1A7-442F-B41B-6F36487B6193&share=IQDBenpeEOGuQLG0p6_s3PXOAbi28TUHVbclGNV5-3w9nAA" target="_blank" rel="noopener noreferrer">
+                    <i class="fa-solid fa-solar-panel"></i> File lead FV/ibride
+                </a>
+                <a class="nav-item" href="https://docs.google.com/spreadsheets/d/18Zg4zt7TSUeegYG87foncc5_x35mcS3vG80NxPAN4oA/edit?pli=1&gid=0#gid=0" target="_blank" rel="noopener noreferrer">
+                    <i class="fa-solid fa-comments"></i> Feedback lead
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-wrap">
 
     <!-- SEZIONE 1: CONVERTITORE UNITA' DI MISURA -->
     <div class="tool-card">
@@ -1217,34 +1369,40 @@
                 <span><i class="fa-solid fa-file-zipper"></i> Comprimi PDF in uscita (immagini a qualità media, ideale per email/portali)</span>
             </label>
 
-            <button class="btn-action" id="saveDocsBtn" onclick="saveAllDocsToFolder()" disabled>
-                <i class="fa-solid fa-folder-open"></i> Scegli cartella e salva tutti i PDF
-            </button>
+            <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.25rem;">
+                <button class="btn-action" id="saveDocsBtn" onclick="saveAllDocsToFolder()" disabled style="flex:1; min-width:200px; margin-top:0;">
+                    <i class="fa-solid fa-folder-open"></i> Scegli cartella e salva tutti i PDF
+                </button>
+                <button type="button" id="clearAllBoxesBtn" onclick="clearAllBoxes()" disabled
+                        style="flex:0 0 auto; margin-top:0; padding:1rem 1.15rem; font-size:0.95rem; font-weight:700; text-transform:uppercase; border-radius:6px; border:2px solid #e53e3e; background:transparent; color:#e53e3e; cursor:pointer; transition:background 0.2s, color 0.2s;">
+                    <i class="fa-solid fa-trash-can"></i> Svuota tutti i box
+                </button>
+            </div>
             <p id="saveFolderHint" style="margin-top:0.6rem; font-size:0.82rem; color:var(--text-muted); text-align:center;">
                 Chrome / Edge: salvataggio diretto nella cartella scelta. Altri browser: download dei singoli file.
             </p>
         </div>
     </div>
 
-    <!-- MODALE RIORDINA PAGINE DI UN BOX -->
-    <div id="reorderModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:1001; justify-content:center; align-items:center; padding:1rem;">
-        <div style="background:var(--card-bg); width:100%; max-width:1100px; max-height:92vh; border-radius:var(--radius); display:flex; flex-direction:column; overflow:hidden; box-shadow:var(--shadow);">
-            <div style="padding:1rem 1.5rem; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
-                <h3 style="font-size:1.2rem; display:flex; align-items:center; gap:0.5rem;">
-                    <i class="fa-solid fa-arrows-up-down-left-right" style="color:var(--accent-orange);"></i>
-                    <span id="reorderModalTitle">Riordina pagine</span>
+    <!-- MODALE ANTEPRIMA / RIORDINA PAGINE DI UN BOX (compatta + rotazione) -->
+    <div id="reorderModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:1001; justify-content:center; align-items:center; padding:0.75rem;">
+        <div style="background:var(--card-bg); width:100%; max-width:900px; max-height:90vh; border-radius:var(--radius); display:flex; flex-direction:column; overflow:hidden; box-shadow:var(--shadow);">
+            <div style="padding:0.75rem 1rem; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="font-size:1.05rem; display:flex; align-items:center; gap:0.45rem;">
+                    <i class="fa-solid fa-eye" style="color:var(--accent-orange);"></i>
+                    <span id="reorderModalTitle">Anteprima e rotazione</span>
                 </h3>
-                <button onclick="closeReorderModal()" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--text-muted);"><i class="fa-solid fa-xmark"></i></button>
+                <button onclick="closeReorderModal()" style="background:none; border:none; font-size:1.3rem; cursor:pointer; color:var(--text-muted);"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <p style="padding:0.75rem 1.5rem; font-size:0.9rem; color:var(--text-muted); border-bottom:1px solid var(--border-color);">
-                Trascina le pagine per riordinarle. Puoi anche ruotarle di 90° prima di confermare.
+            <p id="reorderModalHint" style="padding:0.5rem 1rem; font-size:0.82rem; color:var(--text-muted); border-bottom:1px solid var(--border-color);">
+                Controlla l’orientamento e ruota se necessario. Con più pagine puoi anche trascinarle per riordinarle.
             </p>
-            <div id="reorderPagesGrid" style="flex:1; overflow-y:auto; padding:1.25rem; display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:1rem; background:#f1f3f5;">
+            <div id="reorderPagesGrid" style="flex:1; overflow-y:auto; padding:0.85rem; display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:0.9rem; background:var(--card-inner-bg); align-content:start;">
             </div>
-            <div style="padding:1rem 1.5rem; border-top:1px solid var(--border-color); display:flex; justify-content:flex-end; gap:1rem; background:var(--card-inner-bg);">
-                <button class="btn-action" style="margin:0; width:auto; background:#6c757d; padding:0.55rem 1.1rem;" onclick="closeReorderModal()">Annulla</button>
-                <button class="btn-action" style="margin:0; width:auto; padding:0.55rem 1.4rem;" onclick="confirmReorder()">
-                    <i class="fa-solid fa-check"></i> Conferma ordine
+            <div style="padding:0.75rem 1rem; border-top:1px solid var(--border-color); display:flex; justify-content:flex-end; gap:0.75rem; background:var(--card-inner-bg);">
+                <button class="btn-action" style="margin:0; width:auto; background:#6c757d; padding:0.5rem 1rem; font-size:0.9rem;" onclick="closeReorderModal()">Annulla</button>
+                <button id="reorderConfirmBtn" class="btn-action" style="margin:0; width:auto; padding:0.5rem 1.15rem; font-size:0.9rem;" onclick="confirmReorder()">
+                    <i class="fa-solid fa-check"></i> Conferma e applica
                 </button>
             </div>
         </div>
@@ -1395,8 +1553,8 @@
                         <input type="file" accept="image/*,application/pdf" multiple onchange="handleDocFile(event, ${doc.id})">
                         <div class="file-list" id="list-${doc.id}"></div>
                         <div class="box-actions">
-                            <button type="button" class="btn-box-action" onclick="event.stopPropagation(); openReorderModal(${doc.id})" title="Riordina e ruota pagine">
-                                <i class="fa-solid fa-arrows-up-down-left-right"></i> Riordina
+                            <button type="button" class="btn-box-action" onclick="event.stopPropagation(); openReorderModal(${doc.id})" title="Anteprima grande e rotazione">
+                                <i class="fa-solid fa-eye"></i> Anteprima / Ruota
                             </button>
                         </div>
                     </div>`;
@@ -1450,7 +1608,7 @@
             }
         }
 
-        function processFiles(files, boxId) {
+        function processFiles(files, boxId, autoPreview = true) {
             if (!clientDocs[boxId]) {
                 clientDocs[boxId] = [];
             }
@@ -1459,6 +1617,16 @@
             }
             updateDocBoxUI(boxId);
             checkSaveButtonState();
+
+            // Se c'è un solo file nel box (immagine o PDF), apri subito l'anteprima grande
+            // così si può leggere e ruotare prima di salvare
+            if (autoPreview && clientDocs[boxId].length === 1) {
+                const f = clientDocs[boxId][0];
+                if (f.type.startsWith('image/') || f.type === 'application/pdf') {
+                    // Piccolo delay per lasciare aggiornare la UI del box
+                    setTimeout(() => openReorderModal(boxId), 180);
+                }
+            }
         }
 
         function updateDocBoxUI(boxId) {
@@ -1491,8 +1659,35 @@
 
         function checkSaveButtonState() {
             const btn = document.getElementById('saveDocsBtn');
+            const clearBtn = document.getElementById('clearAllBoxesBtn');
             const hasAny = Object.keys(clientDocs).some(id => clientDocs[id] && clientDocs[id].length > 0);
-            btn.disabled = !hasAny;
+            if (btn) btn.disabled = !hasAny;
+            if (clearBtn) {
+                clearBtn.disabled = !hasAny;
+                clearBtn.style.opacity = hasAny ? '1' : '0.45';
+                clearBtn.style.cursor = hasAny ? 'pointer' : 'not-allowed';
+            }
+        }
+
+        function clearAllBoxes() {
+            const hasAny = Object.keys(clientDocs).some(id => clientDocs[id] && clientDocs[id].length > 0);
+            if (!hasAny) return;
+            if (!confirm('Svuotare tutti i box? I file caricati verranno rimossi (non salvati).')) return;
+
+            Object.keys(clientDocs).forEach(boxId => {
+                delete clientDocs[boxId];
+                const box = document.getElementById(`box-${boxId}`);
+                if (box) {
+                    const fileInput = box.querySelector('input[type="file"]');
+                    if (fileInput) fileInput.value = '';
+                    updateDocBoxUI(boxId);
+                }
+            });
+            checkSaveButtonState();
+            const hint = document.getElementById('saveFolderHint');
+            if (hint) {
+                hint.innerHTML = '<span style="color:var(--text-muted);"><i class="fa-solid fa-circle-info"></i> Tutti i box sono stati svuotati.</span>';
+            }
         }
 
         // Converte un'immagine in JPEG compresso (per opzione compressione)
@@ -1692,10 +1887,18 @@
             }
         }
 
-        // ===== RIORDINO PAGINE DI UN BOX =====
+        // ===== ANTEPRIMA GRANDE + RIORDINO / ROTAZIONE PAGINE DI UN BOX =====
         let reorderBoxId = null;
-        let reorderItems = []; // { id, canvasDataUrl, rotation, sourceType, sourceData }
+        let reorderItems = []; // { id, dataUrl, rotation, sourceType, ... }
         let dragSrcIndex = null;
+
+        function resetReorderConfirmBtn() {
+            const btn = document.getElementById('reorderConfirmBtn');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Conferma e applica';
+            }
+        }
 
         async function openReorderModal(boxId) {
             const files = clientDocs[boxId];
@@ -1703,31 +1906,41 @@
 
             reorderBoxId = boxId;
             reorderItems = [];
-            document.getElementById('reorderModalTitle').textContent = `Riordina: ${getDocDisplayName(boxId)}`;
+            resetReorderConfirmBtn();
+            document.getElementById('reorderModalTitle').textContent = `Anteprima: ${getDocDisplayName(boxId)}`;
             document.getElementById('reorderModal').style.display = 'flex';
             const grid = document.getElementById('reorderPagesGrid');
-            grid.innerHTML = '<p style="color:var(--text-muted);">Caricamento anteprime...</p>';
+            grid.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:2rem;">Caricamento anteprima...</p>';
+
+            // Scale sufficiente per leggere, ma compatto
+            const previewScale = 1.25;
 
             let itemId = 0;
             for (const file of files) {
+                // Copia del buffer: pdf.js (e a volte pdf-lib) possono "detachare" l'ArrayBuffer
                 const arrayBuffer = await file.arrayBuffer();
+                const safeBuffer = arrayBuffer.slice(0);
+
                 if (file.type === 'application/pdf') {
                     try {
-                        const uint8 = new Uint8Array(arrayBuffer);
+                        // Copia separata solo per l'anteprima pdf.js (può transferire/detachare)
+                        const forPreview = safeBuffer.slice(0);
+                        const uint8 = new Uint8Array(forPreview);
                         const pdfJsDoc = await pdfjsLib.getDocument({ data: uint8 }).promise;
                         for (let p = 1; p <= pdfJsDoc.numPages; p++) {
                             const page = await pdfJsDoc.getPage(p);
-                            const viewport = page.getViewport({ scale: 0.7 });
+                            const viewport = page.getViewport({ scale: previewScale });
                             const canvas = document.createElement('canvas');
                             canvas.width = viewport.width;
                             canvas.height = viewport.height;
                             await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
                             reorderItems.push({
                                 id: itemId++,
-                                dataUrl: canvas.toDataURL('image/jpeg', 0.85),
+                                dataUrl: canvas.toDataURL('image/jpeg', 0.92),
                                 rotation: 0,
                                 sourceType: 'pdf-page',
-                                pdfBuffer: arrayBuffer,
+                                // Ogni pagina tiene una copia indipendente del PDF
+                                pdfBuffer: safeBuffer.slice(0),
                                 pageIndex: p - 1
                             });
                         }
@@ -1735,7 +1948,7 @@
                         console.error(e);
                     }
                 } else if (file.type.startsWith('image/')) {
-                    const blob = new Blob([arrayBuffer], { type: file.type });
+                    const blob = new Blob([safeBuffer], { type: file.type });
                     const dataUrl = await new Promise(res => {
                         const r = new FileReader();
                         r.onload = () => res(r.result);
@@ -1746,7 +1959,7 @@
                         dataUrl,
                         rotation: 0,
                         sourceType: 'image',
-                        imageBuffer: arrayBuffer,
+                        imageBuffer: safeBuffer.slice(0),
                         imageType: file.type
                     });
                 }
@@ -1757,49 +1970,118 @@
         function renderReorderGrid() {
             const grid = document.getElementById('reorderPagesGrid');
             grid.innerHTML = '';
+            const isSingle = reorderItems.length === 1;
+            const isFew = reorderItems.length <= 2;
+
+            // Layout compatto: 1 pagina centrata, poche un po' più larghe, molte griglia
+            if (isSingle) {
+                grid.style.display = 'flex';
+                grid.style.flexDirection = 'column';
+                grid.style.alignItems = 'center';
+                grid.style.justifyContent = 'flex-start';
+                grid.style.gridTemplateColumns = '';
+            } else if (isFew) {
+                grid.style.display = 'grid';
+                grid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(240px, 1fr))';
+            } else {
+                grid.style.display = 'grid';
+                grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(160px, 1fr))';
+            }
+
+            const hint = document.getElementById('reorderModalHint');
+            if (hint) {
+                hint.textContent = isSingle
+                    ? 'Controlla l’orientamento e usa ±90° per ruotare, poi conferma.'
+                    : 'Ruota le pagine e trascina le card per cambiare l’ordine, poi conferma.';
+            }
+
             reorderItems.forEach((item, index) => {
                 const div = document.createElement('div');
                 div.className = 'reorder-page-item';
-                div.draggable = true;
+                div.draggable = !isSingle;
                 div.dataset.index = index;
+
+                if (isSingle) {
+                    div.style.cssText = 'max-width:min(520px, 92vw); width:100%; background:var(--card-bg); border:2px solid var(--border-color); border-radius:8px; padding:0.55rem; display:flex; flex-direction:column; align-items:center; gap:0.45rem;';
+                }
+
+                const imgStyle = isSingle
+                    ? `max-width:100%; max-height:min(52vh, 480px); width:auto; height:auto; object-fit:contain; border-radius:4px; border:1px solid var(--border-color); transform:rotate(${item.rotation}deg); transition:transform 0.2s; background:#fff;`
+                    : `width:100%; height:auto; border-radius:4px; border:1px solid var(--border-color); transform:rotate(${item.rotation}deg); transition:transform 0.2s; background:#fff;`;
+
                 div.innerHTML = `
-                    <div style="font-size:0.8rem; font-weight:700; color:var(--accent-orange);">Pag. ${index + 1}</div>
-                    <img src="${item.dataUrl}" style="width:100%; height:auto; border-radius:4px; border:1px solid var(--border-color); transform:rotate(${item.rotation}deg); transition:transform 0.2s;">
-                    <button type="button" class="btn-box-action" style="width:100%; justify-content:center;" onclick="event.stopPropagation(); rotateReorderItem(${index})">
-                        <i class="fa-solid fa-rotate-right"></i> 90°
-                    </button>
+                    <div style="font-size:0.8rem; font-weight:700; color:var(--accent-orange); display:flex; align-items:center; gap:0.4rem; width:100%; justify-content:space-between;">
+                        <span>Pag. ${index + 1}${item.rotation ? ` · ${item.rotation}°` : ''}</span>
+                        ${!isSingle ? '<i class="fa-solid fa-grip-vertical" style="color:var(--text-muted); font-size:0.8rem;"></i>' : ''}
+                    </div>
+                    <img src="${item.dataUrl}" alt="Pagina ${index + 1}" style="${imgStyle}">
+                    <div style="display:flex; gap:0.35rem; width:100%; justify-content:center; flex-wrap:wrap;">
+                        <button type="button" class="btn-box-action" style="flex:1; min-width:70px; justify-content:center; padding:0.4rem 0.45rem; font-size:0.8rem;" onclick="event.stopPropagation(); rotateReorderItem(${index}, -90)">
+                            <i class="fa-solid fa-rotate-left"></i> −90°
+                        </button>
+                        <button type="button" class="btn-box-action" style="flex:1; min-width:70px; justify-content:center; padding:0.4rem 0.45rem; font-size:0.8rem;" onclick="event.stopPropagation(); rotateReorderItem(${index}, 90)">
+                            <i class="fa-solid fa-rotate-right"></i> +90°
+                        </button>
+                        <button type="button" class="btn-box-action" style="flex:1; min-width:70px; justify-content:center; padding:0.4rem 0.45rem; font-size:0.8rem; color:#e53e3e; border-color:#e53e3e;" onclick="event.stopPropagation(); deleteReorderItem(${index})" title="Elimina pagina">
+                            <i class="fa-solid fa-trash-can"></i> Elimina
+                        </button>
+                    </div>
                 `;
-                div.addEventListener('dragstart', (e) => {
-                    dragSrcIndex = index;
-                    div.classList.add('dragging');
-                    e.dataTransfer.effectAllowed = 'move';
-                });
-                div.addEventListener('dragend', () => {
-                    div.classList.remove('dragging');
-                    dragSrcIndex = null;
-                    document.querySelectorAll('.reorder-page-item').forEach(el => el.classList.remove('drag-over'));
-                });
-                div.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
-                    div.classList.add('drag-over');
-                });
-                div.addEventListener('dragleave', () => div.classList.remove('drag-over'));
-                div.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    div.classList.remove('drag-over');
-                    const targetIndex = parseInt(div.dataset.index);
-                    if (dragSrcIndex === null || dragSrcIndex === targetIndex) return;
-                    const moved = reorderItems.splice(dragSrcIndex, 1)[0];
-                    reorderItems.splice(targetIndex, 0, moved);
-                    renderReorderGrid();
-                });
+
+                if (!isSingle) {
+                    div.addEventListener('dragstart', (e) => {
+                        dragSrcIndex = index;
+                        div.classList.add('dragging');
+                        e.dataTransfer.effectAllowed = 'move';
+                    });
+                    div.addEventListener('dragend', () => {
+                        div.classList.remove('dragging');
+                        dragSrcIndex = null;
+                        document.querySelectorAll('.reorder-page-item').forEach(el => el.classList.remove('drag-over'));
+                    });
+                    div.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        div.classList.add('drag-over');
+                    });
+                    div.addEventListener('dragleave', () => div.classList.remove('drag-over'));
+                    div.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        div.classList.remove('drag-over');
+                        const targetIndex = parseInt(div.dataset.index);
+                        if (dragSrcIndex === null || dragSrcIndex === targetIndex) return;
+                        const moved = reorderItems.splice(dragSrcIndex, 1)[0];
+                        reorderItems.splice(targetIndex, 0, moved);
+                        renderReorderGrid();
+                    });
+                }
                 grid.appendChild(div);
             });
         }
 
-        function rotateReorderItem(index) {
-            reorderItems[index].rotation = (reorderItems[index].rotation + 90) % 360;
+        function rotateReorderItem(index, delta = 90) {
+            reorderItems[index].rotation = ((reorderItems[index].rotation + delta) % 360 + 360) % 360;
+            renderReorderGrid();
+        }
+
+        function deleteReorderItem(index) {
+            if (reorderItems.length <= 1) {
+                if (!confirm('È l’ultima pagina. Eliminandola il box resterà vuoto. Continuare?')) return;
+                reorderItems = [];
+                if (reorderBoxId !== null) {
+                    delete clientDocs[reorderBoxId];
+                    const box = document.getElementById(`box-${reorderBoxId}`);
+                    if (box) {
+                        const fileInput = box.querySelector('input[type="file"]');
+                        if (fileInput) fileInput.value = '';
+                        updateDocBoxUI(reorderBoxId);
+                    }
+                    checkSaveButtonState();
+                }
+                closeReorderModal();
+                return;
+            }
+            reorderItems.splice(index, 1);
             renderReorderGrid();
         }
 
@@ -1807,6 +2089,7 @@
             document.getElementById('reorderModal').style.display = 'none';
             reorderBoxId = null;
             reorderItems = [];
+            resetReorderConfirmBtn();
         }
 
         async function rotateImageBuffer(arrayBuffer, degrees, mimeHint) {
@@ -1842,35 +2125,57 @@
         async function confirmReorder() {
             if (reorderBoxId === null || reorderItems.length === 0) return;
 
-            const pdfDoc = await PDFLib.PDFDocument.create();
-
-            for (const item of reorderItems) {
-                if (item.sourceType === 'image') {
-                    let buffer = item.imageBuffer;
-                    if (item.rotation) {
-                        buffer = await rotateImageBuffer(buffer, item.rotation, item.imageType);
-                    }
-                    const embedded = await pdfDoc.embedJpg(buffer);
-                    const page = pdfDoc.addPage([embedded.width, embedded.height]);
-                    page.drawImage(embedded, { x: 0, y: 0, width: embedded.width, height: embedded.height });
-                } else if (item.sourceType === 'pdf-page') {
-                    const donor = await PDFLib.PDFDocument.load(item.pdfBuffer);
-                    const [copied] = await pdfDoc.copyPages(donor, [item.pageIndex]);
-                    if (item.rotation) {
-                        const current = copied.getRotation().angle;
-                        copied.setRotation(PDFLib.degrees((current + item.rotation) % 360));
-                    }
-                    pdfDoc.addPage(copied);
-                }
+            const confirmBtn = document.getElementById('reorderConfirmBtn');
+            if (confirmBtn) {
+                confirmBtn.disabled = true;
+                confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Applico...';
             }
 
-            const pdfBytes = await pdfDoc.save();
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-            const newFile = new File([blob], `${safeFileName(getDocDisplayName(reorderBoxId))} riordinato.pdf`, { type: 'application/pdf' });
+            try {
+                const pdfDoc = await PDFLib.PDFDocument.create();
 
-            clientDocs[reorderBoxId] = [newFile];
-            updateDocBoxUI(reorderBoxId);
-            closeReorderModal();
+                for (const item of reorderItems) {
+                    if (item.sourceType === 'image') {
+                        // Sempre una copia: evita ArrayBuffer detached
+                        let buffer = item.imageBuffer.slice(0);
+                        // Converti in JPEG (gestisce PNG e rotazioni)
+                        if (item.rotation || (item.imageType && item.imageType.includes('png'))) {
+                            buffer = await rotateImageBuffer(buffer, item.rotation || 0, item.imageType);
+                        } else if (item.imageType && !item.imageType.includes('jpeg') && !item.imageType.includes('jpg')) {
+                            buffer = await imageToCompressedJpegBytes(buffer, 0.92);
+                        }
+                        const embedded = await pdfDoc.embedJpg(buffer);
+                        const page = pdfDoc.addPage([embedded.width, embedded.height]);
+                        page.drawImage(embedded, { x: 0, y: 0, width: embedded.width, height: embedded.height });
+                    } else if (item.sourceType === 'pdf-page') {
+                        // slice(0) obbligatorio: pdf-lib può detachare il buffer
+                        const donor = await PDFLib.PDFDocument.load(item.pdfBuffer.slice(0));
+                        const [copied] = await pdfDoc.copyPages(donor, [item.pageIndex]);
+                        if (item.rotation) {
+                            const current = copied.getRotation().angle;
+                            copied.setRotation(PDFLib.degrees((current + item.rotation) % 360));
+                        }
+                        pdfDoc.addPage(copied);
+                    }
+                }
+
+                if (pdfDoc.getPageCount() === 0) {
+                    throw new Error('Nessuna pagina generata');
+                }
+
+                const pdfBytes = await pdfDoc.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const newFile = new File([blob], `${safeFileName(getDocDisplayName(reorderBoxId))} riordinato.pdf`, { type: 'application/pdf' });
+
+                clientDocs[reorderBoxId] = [newFile];
+                updateDocBoxUI(reorderBoxId);
+                checkSaveButtonState();
+                closeReorderModal();
+            } catch (err) {
+                console.error('Errore conferma anteprima/rotazione:', err);
+                alert('Errore durante l\'applicazione delle rotazioni: ' + (err.message || err));
+                resetReorderConfirmBtn();
+            }
         }
 
         // --- GESTIONE SMISTAMENTO MULTI-PAGINA VELOCE ---
@@ -2069,30 +2374,54 @@
                 wrapper.appendChild(img);
 
                 const actionsRow = document.createElement('div');
-                actionsRow.style.cssText = "display:flex; gap:0.35rem; align-items:center;";
+                actionsRow.style.cssText = "display:flex; gap:0.3rem; align-items:center; flex-wrap:wrap;";
+
+                const rotBtnL = document.createElement('button');
+                rotBtnL.type = 'button';
+                rotBtnL.title = 'Ruota −90°';
+                rotBtnL.innerHTML = '<i class="fa-solid fa-rotate-left"></i>';
+                rotBtnL.style.cssText = "flex-shrink:0; width:34px; height:32px; border:1px solid var(--border-color); border-radius:5px; background:#fff; color:var(--accent-orange); cursor:pointer; font-size:0.9rem;";
+                rotBtnL.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    pageRotations[origPage] = ((pageRotations[origPage] || 0) - 90 + 360) % 360;
+                    img.style.transform = pageRotations[origPage] ? `rotate(${pageRotations[origPage]}deg)` : '';
+                    rotBadge.textContent = pageRotations[origPage] ? `${pageRotations[origPage]}°` : '';
+                });
+                actionsRow.appendChild(rotBtnL);
 
                 const rotBtn = document.createElement('button');
                 rotBtn.type = 'button';
-                rotBtn.title = 'Ruota 90° orario';
+                rotBtn.title = 'Ruota +90°';
                 rotBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i>';
-                rotBtn.style.cssText = "flex-shrink:0; width:36px; height:34px; border:1px solid var(--border-color); border-radius:5px; background:#fff; color:var(--accent-orange); cursor:pointer; font-size:0.95rem;";
+                rotBtn.style.cssText = "flex-shrink:0; width:34px; height:32px; border:1px solid var(--border-color); border-radius:5px; background:#fff; color:var(--accent-orange); cursor:pointer; font-size:0.9rem;";
                 rotBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     pageRotations[origPage] = ((pageRotations[origPage] || 0) + 90) % 360;
-                    img.style.transform = `rotate(${pageRotations[origPage]}deg)`;
+                    img.style.transform = pageRotations[origPage] ? `rotate(${pageRotations[origPage]}deg)` : '';
                     rotBadge.textContent = pageRotations[origPage] ? `${pageRotations[origPage]}°` : '';
                 });
                 actionsRow.appendChild(rotBtn);
 
                 const rotBadge = document.createElement('span');
-                rotBadge.style.cssText = "font-size:0.7rem; color:var(--text-muted); min-width:28px;";
+                rotBadge.style.cssText = "font-size:0.7rem; color:var(--text-muted); min-width:24px;";
                 if (pageRotations[origPage]) rotBadge.textContent = `${pageRotations[origPage]}°`;
                 actionsRow.appendChild(rotBadge);
+
+                const delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.title = 'Elimina questa pagina';
+                delBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+                delBtn.style.cssText = "flex-shrink:0; width:34px; height:32px; border:1px solid #e53e3e; border-radius:5px; background:#fff; color:#e53e3e; cursor:pointer; font-size:0.85rem;";
+                delBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteMultiPdfPage(origPage);
+                });
+                actionsRow.appendChild(delBtn);
 
                 const select = document.createElement('select');
                 select.className = 'page-assign-select';
                 select.dataset.page = origPage;
-                select.style.cssText = "flex:1; padding:0.4rem; font-size:0.82rem; border:1px solid var(--border-color); border-radius:5px; background:#fff;";
+                select.style.cssText = "flex:1; min-width:120px; padding:0.35rem; font-size:0.8rem; border:1px solid var(--border-color); border-radius:5px; background:#fff;";
                 select.innerHTML = getBoxOptionsHtml(pageAssignments[origPage] || '');
                 select.addEventListener('change', function() {
                     const pageNum = parseInt(this.dataset.page);
@@ -2106,7 +2435,6 @@
                     }
                     updateAssignmentSummary();
                 });
-                // Evita che il drag parta dal select
                 select.addEventListener('mousedown', (e) => e.stopPropagation());
                 actionsRow.appendChild(select);
                 wrapper.appendChild(actionsRow);
@@ -2165,13 +2493,17 @@
                 alert("Seleziona un box di destinazione.");
                 return;
             }
-            if (from < 1 || to > totalPdfPages || from > to) {
-                alert(`Intervallo non valido. Usa valori tra 1 e ${totalPdfPages}, con "Da" ≤ "A".`);
+            if (from < 1 || from > to) {
+                alert('Intervallo non valido: "Da" deve essere ≤ "A".');
                 return;
             }
 
+            // Assegna solo pagine ancora presenti (numeri originali)
+            let assigned = 0;
             for (let p = from; p <= to; p++) {
+                if (!pageOrder.includes(p)) continue;
                 pageAssignments[p] = target;
+                assigned++;
                 const select = document.querySelector(`.page-assign-select[data-page="${p}"]`);
                 if (select) {
                     select.value = target;
@@ -2179,6 +2511,26 @@
                     if (card) card.style.borderColor = 'var(--accent-green)';
                 }
             }
+            if (assigned === 0) {
+                alert('Nessuna pagina nell’intervallo (potrebbero essere state eliminate). Usa i numeri “orig.” sulle card.');
+                return;
+            }
+            updateAssignmentSummary();
+        }
+
+        function deleteMultiPdfPage(pageNum) {
+            if (pageOrder.length <= 1) {
+                if (!confirm('È l’ultima pagina. Eliminandola chiuderai lo smistamento. Continuare?')) return;
+                closeMultiPdfModal();
+                return;
+            }
+            const idx = pageOrder.indexOf(pageNum);
+            if (idx < 0) return;
+            pageOrder.splice(idx, 1);
+            delete pageAssignments[pageNum];
+            delete pageRotations[pageNum];
+            delete pagePreviewCache[pageNum];
+            renderOrderedPdfThumbnails();
             updateAssignmentSummary();
         }
 
@@ -2193,339 +2545,4 @@
         }
 
         function updateAssignmentSummary() {
-            const summary = document.getElementById('assignmentSummary');
-            const counter = document.getElementById('assignCounter');
-            // Rispetta l'ordine di trascinamento
-            const assignedPages = pageOrder.filter(p => pageAssignments[p]);
-            const count = assignedPages.length;
-
-            counter.textContent = `${count} / ${totalPdfPages} pagine assegnate`;
-            counter.style.color = count === totalPdfPages ? 'var(--accent-green)' : (count > 0 ? 'var(--accent-orange)' : 'var(--text-muted)');
-
-            if (count === 0) {
-                summary.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem;">Nessuna pagina assegnata. Usa i menu sotto le pagine o lo strumento intervallo.</p>';
-                return;
-            }
-
-            // Raggruppa per box (ordine = ordine di trascinamento)
-            const byBox = {};
-            assignedPages.forEach(p => {
-                const boxId = pageAssignments[p];
-                if (!byBox[boxId]) byBox[boxId] = [];
-                byBox[boxId].push(p);
-            });
-
-            let html = '';
-            Object.keys(byBox).forEach(boxId => {
-                const doc = docNames.find(d => d.id == boxId);
-                const pages = byBox[boxId];
-                // Comprimi in intervalli leggibili: 1,2,3 → 1-3
-                const ranges = compressPageList(pages);
-                html += `
-                    <div style="background:var(--card-inner-bg); border:1px solid var(--border-color); border-radius:6px; padding:0.6rem 0.75rem; display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
-                        <div>
-                            <strong style="font-size:0.88rem;"><i class="fa-solid ${doc ? doc.icon : 'fa-folder'}"></i> ${getDocDisplayName(boxId)}</strong>
-                            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.15rem;">Pagine: ${ranges}</div>
-                        </div>
-                        <span style="background:var(--accent-green); color:#fff; font-size:0.75rem; font-weight:700; padding:0.15rem 0.5rem; border-radius:10px;">${pages.length}</span>
-                    </div>
-                `;
-            });
-            summary.innerHTML = html;
-        }
-
-        function compressPageList(pages) {
-            if (!pages.length) return '';
-            const sorted = [...pages].sort((a,b) => a-b);
-            const ranges = [];
-            let start = sorted[0], end = sorted[0];
-            for (let i = 1; i < sorted.length; i++) {
-                if (sorted[i] === end + 1) {
-                    end = sorted[i];
-                } else {
-                    ranges.push(start === end ? `${start}` : `${start}-${end}`);
-                    start = end = sorted[i];
-                }
-            }
-            ranges.push(start === end ? `${start}` : `${start}-${end}`);
-            return ranges.join(', ');
-        }
-
-        function closeMultiPdfModal() {
-            document.getElementById('multiPdfModal').style.display = 'none';
-            loadedMasterPdfDoc = null;
-            masterPdfArrayBuffer = null;
-            pdfJsDocInstance = null;
-            pageAssignments = {};
-            pageRotations = {};
-            pageOrder = [];
-            pagePreviewCache = {};
-            multiDragSrcPage = null;
-        }
-
-        async function executePdfSplitting() {
-            if (!loadedMasterPdfDoc) return;
-
-            // Pagine assegnate nell'ordine attuale di pageOrder
-            const orderedAssigned = pageOrder.filter(p => pageAssignments[p]);
-            if (orderedAssigned.length === 0) {
-                alert("Assegna almeno una pagina a un box prima di confermare.");
-                return;
-            }
-
-            // Raggruppa per box rispettando l'ordine di trascinamento
-            const byBox = {};
-            orderedAssigned.forEach(p => {
-                const boxId = pageAssignments[p];
-                if (!byBox[boxId]) byBox[boxId] = [];
-                byBox[boxId].push(p);
-            });
-
-            for (const boxId of Object.keys(byBox)) {
-                const pages1Based = byBox[boxId];
-                const pageIndices = pages1Based.map(p => p - 1);
-                const subPdf = await PDFLib.PDFDocument.create();
-                const copiedPages = await subPdf.copyPages(loadedMasterPdfDoc, pageIndices);
-
-                copiedPages.forEach((copiedPage, idx) => {
-                    const pageNum = pages1Based[idx];
-                    const rot = pageRotations[pageNum] || 0;
-                    if (rot) {
-                        const current = copiedPage.getRotation().angle;
-                        copiedPage.setRotation(PDFLib.degrees((current + rot) % 360));
-                    }
-                    subPdf.addPage(copiedPage);
-                });
-
-                const pdfBytes = await subPdf.save();
-                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-                const rangeLabel = compressPageList(pages1Based);
-                const splitFile = new File([blob], `estratto_pag_${rangeLabel}_${masterFileName}`, { type: 'application/pdf' });
-
-                processFiles([splitFile], parseInt(boxId));
-            }
-
-            closeMultiPdfModal();
-            
-            const archiveCard = document.getElementById('archive-card');
-            archiveCard.classList.add('active');
-            archiveCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            
-            archiveCard.classList.add('highlight-card');
-            setTimeout(() => {
-                archiveCard.classList.remove('highlight-card');
-            }, 2000);
-        }
-
-        // --- CONVERTITORI TERMOIDRAULICI ---
-        function swapConverter(type, callback) {
-            const valIn = document.getElementById(`${type}-in`);
-            const valOut = document.getElementById(`${type}-out`);
-            const unitIn = document.getElementById(`${type}-unit-in`);
-            const unitOut = document.getElementById(`${type}-unit-out`);
-
-            const tempVal = valIn.value;
-            valIn.value = valOut.value;
-            
-            const tempUnit = unitIn.value;
-            unitIn.value = unitOut.value;
-            unitOut.value = tempUnit;
-
-            callback();
-        }
-
-        function convertPressure() {
-            const val = parseFloat(document.getElementById('press-in').value) || 0;
-            const uIn = document.getElementById('press-unit-in').value;
-            const uOut = document.getElementById('press-unit-out').value;
-
-            let inBar = 0;
-            switch(uIn) {
-                case 'bar': inBar = val; break;
-                case 'mbar': inBar = val / 1000; break;
-                case 'mca': inBar = val / 10.1972; break;
-                case 'pascal': inBar = val / 100000; break;
-                case 'kpa': inBar = val / 100; break;
-                case 'psi': inBar = val / 14.5038; break;
-                case 'atm': inBar = val / 0.986923; break;
-            }
-
-            let res = 0;
-            switch(uOut) {
-                case 'bar': res = inBar; break;
-                case 'mbar': res = inBar * 1000; break;
-                case 'mca': res = inBar * 10.1972; break;
-                case 'pascal': res = inBar * 100000; break;
-                case 'kpa': res = inBar * 100; break;
-                case 'psi': res = inBar * 14.5038; break;
-                case 'atm': res = inBar * 0.986923; break;
-            }
-            document.getElementById('press-out').value = res.toFixed(4);
-        }
-
-        function convertPower() {
-            const val = parseFloat(document.getElementById('power-in').value) || 0;
-            const uIn = document.getElementById('power-unit-in').value;
-            const uOut = document.getElementById('power-unit-out').value;
-
-            let inKw = 0;
-            switch(uIn) {
-                case 'kw': inKw = val; break;
-                case 'w': inKw = val / 1000; break;
-                case 'kcalh': inKw = val / 860.421; break;
-                case 'btuh': inKw = val / 3412.14; break;
-            }
-
-            let res = 0;
-            switch(uOut) {
-                case 'kw': res = inKw; break;
-                case 'w': res = inKw * 1000; break;
-                case 'kcalh': res = inKw * 860.421; break;
-                case 'btuh': res = inKw * 3412.14; break;
-            }
-            document.getElementById('power-out').value = res.toFixed(2);
-        }
-
-        function convertFlow() {
-            const val = parseFloat(document.getElementById('flow-in').value) || 0;
-            const uIn = document.getElementById('flow-unit-in').value;
-            const uOut = document.getElementById('flow-unit-out').value;
-
-            let inM3h = 0;
-            switch(uIn) {
-                case 'lh': inM3h = val / 1000; break;
-                case 'lmin': inM3h = val * 60 / 1000; break;
-                case 'ls': inM3h = val * 3600 / 1000; break;
-                case 'm3h': inM3h = val; break;
-            }
-
-            let res = 0;
-            switch(uOut) {
-                case 'lh': res = inM3h * 1000; break;
-                case 'lmin': res = inM3h * 1000 / 60; break;
-                case 'ls': res = inM3h * 1000 / 3600; break;
-                case 'm3h': res = inM3h; break;
-            }
-            document.getElementById('flow-out').value = res.toFixed(2);
-        }
-
-        function convertTemp() {
-            const val = parseFloat(document.getElementById('temp-in').value) || 0;
-            const uIn = document.getElementById('temp-unit-in').value;
-            const uOut = document.getElementById('temp-unit-out').value;
-
-            let inC = 0;
-            if(uIn === 'c') inC = val;
-            else if(uIn === 'f') inC = (val - 32) * 5/9;
-            else if(uIn === 'k') inC = val - 273.15;
-
-            let res = 0;
-            if(uOut === 'c') res = inC;
-            else if(uOut === 'f') res = (inC * 9/5) + 32;
-            else if(uOut === 'k') res = inC + 273.15;
-
-            document.getElementById('temp-out').value = res.toFixed(2);
-        }
-
-        function convertEnergy() {
-            const val = parseFloat(document.getElementById('energy-in').value) || 0;
-            const uIn = document.getElementById('energy-unit-in').value;
-            const uOut = document.getElementById('energy-unit-out').value;
-
-            let inKwh = 0;
-            switch(uIn) {
-                case 'kwh': inKwh = val; break;
-                case 'mj': inKwh = val / 3.6; break;
-                case 'kcal': inKwh = val / 860.421; break;
-                case 'btu': inKwh = val / 3412.14; break;
-            }
-
-            let res = 0;
-            switch(uOut) {
-                case 'kwh': res = inKwh; break;
-                case 'mj': res = inKwh * 3.6; break;
-                case 'kcal': res = inKwh * 860.421; break;
-                case 'btu': res = inKwh * 3412.14; break;
-            }
-            document.getElementById('energy-out').value = res.toFixed(2);
-        }
-
-        function convertVolume() {
-            const val = parseFloat(document.getElementById('vol-in').value) || 0;
-            const uIn = document.getElementById('vol-unit-in').value;
-            const uOut = document.getElementById('vol-unit-out').value;
-
-            let inL = 0;
-            switch(uIn) {
-                case 'm3': inL = val * 1000; break;
-                case 'l': inL = val; break;
-                case 'gal': inL = val * 3.78541; break;
-            }
-
-            let res = 0;
-            switch(uOut) {
-                case 'm3': res = inL / 1000; break;
-                case 'l': res = inL; break;
-                case 'gal': res = inL / 3.78541; break;
-            }
-            document.getElementById('vol-out').value = res.toFixed(2);
-        }
-
-        // ===== CALCOLATORE IVA BENI SIGNIFICATIVI =====
-        function formatCurrency(val) {
-            return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(val);
-        }
-
-        function calcolaIVA() {
-            const bene = parseFloat(document.getElementById('valoreBene').value) || 0;
-            const manodopera = parseFloat(document.getElementById('valoreManodopera').value) || 0;
-            const resultsDiv = document.getElementById('ivaResults');
-
-            if (bene <= 0 && manodopera <= 0) {
-                resultsDiv.style.display = 'none';
-                return;
-            }
-
-            resultsDiv.style.display = 'block';
-
-            const totaleImponibile = bene + manodopera;
-            const sogliaMeta = totaleImponibile / 2;
-
-            let imp10 = 0;
-            let imp22 = 0;
-
-            const caseBadge = document.getElementById('caseBadge');
-            const explanNote = document.getElementById('explanNote');
-
-            if (bene <= sogliaMeta) {
-                // Caso 1: il bene è ≤ 50% del totale
-                imp10 = totaleImponibile;
-                imp22 = 0;
-                caseBadge.className = "iva-case-badge iva-case-1";
-                caseBadge.textContent = "CASO 1: Bene Significativo ≤ 50% del Totale";
-                explanNote.textContent = "Poiché il valore del bene significativo non supera il 50% dell'importo totale della prestazione, l'intero imponibile beneficia dell'IVA agevolata al 10%.";
-            } else {
-                // Caso 2: il bene è > 50% del totale
-                imp10 = manodopera * 2;
-                imp22 = totaleImponibile - imp10;
-                caseBadge.className = "iva-case-badge iva-case-2";
-                caseBadge.textContent = "CASO 2: Bene Significativo > 50% del Totale";
-                explanNote.innerHTML = `Il valore del bene supera il 50% del totale. L'IVA al 10% si applica sulla manodopera/materiali (${formatCurrency(manodopera)}) e su una pari quota del bene (${formatCurrency(manodopera)}). La parte rimanente del bene (${formatCurrency(imp22)}) sconta l'IVA ordinaria al 22%.`;
-            }
-
-            const iva10Val = imp10 * 0.10;
-            const iva22Val = imp22 * 0.22;
-            const totIVAVal = iva10Val + iva22Val;
-            const totFatturaVal = totaleImponibile + totIVAVal;
-
-            document.getElementById('imp10').textContent = formatCurrency(imp10);
-            document.getElementById('iva10').textContent = formatCurrency(iva10Val);
-            document.getElementById('imp22').textContent = formatCurrency(imp22);
-            document.getElementById('iva22').textContent = formatCurrency(iva22Val);
-            document.getElementById('totImponibile').textContent = formatCurrency(totaleImponibile);
-            document.getElementById('totIVA').textContent = formatCurrency(totIVAVal);
-            document.getElementById('totFattura').textContent = formatCurrency(totFatturaVal);
-        }
-    </script>
-</body>
-</html>
+  
