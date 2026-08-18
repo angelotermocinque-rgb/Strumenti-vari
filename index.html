@@ -2545,4 +2545,342 @@
         }
 
         function updateAssignmentSummary() {
-  
+            const summary = document.getElementById('assignmentSummary');
+            const counter = document.getElementById('assignCounter');
+            // Rispetta l'ordine di trascinamento (solo pagine ancora presenti)
+            const remaining = pageOrder.length;
+            const assignedPages = pageOrder.filter(p => pageAssignments[p]);
+            const count = assignedPages.length;
+
+            counter.textContent = `${count} / ${remaining} pagine assegnate`;
+            counter.style.color = count === totalPdfPages ? 'var(--accent-green)' : (count > 0 ? 'var(--accent-orange)' : 'var(--text-muted)');
+
+            if (count === 0) {
+                summary.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem;">Nessuna pagina assegnata. Usa i menu sotto le pagine o lo strumento intervallo.</p>';
+                return;
+            }
+
+            // Raggruppa per box (ordine = ordine di trascinamento)
+            const byBox = {};
+            assignedPages.forEach(p => {
+                const boxId = pageAssignments[p];
+                if (!byBox[boxId]) byBox[boxId] = [];
+                byBox[boxId].push(p);
+            });
+
+            let html = '';
+            Object.keys(byBox).forEach(boxId => {
+                const doc = docNames.find(d => d.id == boxId);
+                const pages = byBox[boxId];
+                // Comprimi in intervalli leggibili: 1,2,3 → 1-3
+                const ranges = compressPageList(pages);
+                html += `
+                    <div style="background:var(--card-inner-bg); border:1px solid var(--border-color); border-radius:6px; padding:0.6rem 0.75rem; display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
+                        <div>
+                            <strong style="font-size:0.88rem;"><i class="fa-solid ${doc ? doc.icon : 'fa-folder'}"></i> ${getDocDisplayName(boxId)}</strong>
+                            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.15rem;">Pagine: ${ranges}</div>
+                        </div>
+                        <span style="background:var(--accent-green); color:#fff; font-size:0.75rem; font-weight:700; padding:0.15rem 0.5rem; border-radius:10px;">${pages.length}</span>
+                    </div>
+                `;
+            });
+            summary.innerHTML = html;
+        }
+
+        function compressPageList(pages) {
+            if (!pages.length) return '';
+            const sorted = [...pages].sort((a,b) => a-b);
+            const ranges = [];
+            let start = sorted[0], end = sorted[0];
+            for (let i = 1; i < sorted.length; i++) {
+                if (sorted[i] === end + 1) {
+                    end = sorted[i];
+                } else {
+                    ranges.push(start === end ? `${start}` : `${start}-${end}`);
+                    start = end = sorted[i];
+                }
+            }
+            ranges.push(start === end ? `${start}` : `${start}-${end}`);
+            return ranges.join(', ');
+        }
+
+        function closeMultiPdfModal() {
+            document.getElementById('multiPdfModal').style.display = 'none';
+            loadedMasterPdfDoc = null;
+            masterPdfArrayBuffer = null;
+            pdfJsDocInstance = null;
+            pageAssignments = {};
+            pageRotations = {};
+            pageOrder = [];
+            pagePreviewCache = {};
+            multiDragSrcPage = null;
+        }
+
+        async function executePdfSplitting() {
+            if (!loadedMasterPdfDoc) return;
+
+            // Pagine assegnate nell'ordine attuale di pageOrder
+            const orderedAssigned = pageOrder.filter(p => pageAssignments[p]);
+            if (orderedAssigned.length === 0) {
+                alert("Assegna almeno una pagina a un box prima di confermare.");
+                return;
+            }
+
+            // Raggruppa per box rispettando l'ordine di trascinamento
+            const byBox = {};
+            orderedAssigned.forEach(p => {
+                const boxId = pageAssignments[p];
+                if (!byBox[boxId]) byBox[boxId] = [];
+                byBox[boxId].push(p);
+            });
+
+            for (const boxId of Object.keys(byBox)) {
+                const pages1Based = byBox[boxId];
+                const pageIndices = pages1Based.map(p => p - 1);
+                const subPdf = await PDFLib.PDFDocument.create();
+                const copiedPages = await subPdf.copyPages(loadedMasterPdfDoc, pageIndices);
+
+                copiedPages.forEach((copiedPage, idx) => {
+                    const pageNum = pages1Based[idx];
+                    const rot = pageRotations[pageNum] || 0;
+                    if (rot) {
+                        const current = copiedPage.getRotation().angle;
+                        copiedPage.setRotation(PDFLib.degrees((current + rot) % 360));
+                    }
+                    subPdf.addPage(copiedPage);
+                });
+
+                const pdfBytes = await subPdf.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const rangeLabel = compressPageList(pages1Based);
+                const splitFile = new File([blob], `estratto_pag_${rangeLabel}_${masterFileName}`, { type: 'application/pdf' });
+
+                processFiles([splitFile], parseInt(boxId), false);
+            }
+
+            closeMultiPdfModal();
+            
+            const archiveCard = document.getElementById('archive-card');
+            archiveCard.classList.add('active');
+            archiveCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            archiveCard.classList.add('highlight-card');
+            setTimeout(() => {
+                archiveCard.classList.remove('highlight-card');
+            }, 2000);
+        }
+
+        // --- CONVERTITORI TERMOIDRAULICI ---
+        function swapConverter(type, callback) {
+            const valIn = document.getElementById(`${type}-in`);
+            const valOut = document.getElementById(`${type}-out`);
+            const unitIn = document.getElementById(`${type}-unit-in`);
+            const unitOut = document.getElementById(`${type}-unit-out`);
+
+            const tempVal = valIn.value;
+            valIn.value = valOut.value;
+            
+            const tempUnit = unitIn.value;
+            unitIn.value = unitOut.value;
+            unitOut.value = tempUnit;
+
+            callback();
+        }
+
+        function convertPressure() {
+            const val = parseFloat(document.getElementById('press-in').value) || 0;
+            const uIn = document.getElementById('press-unit-in').value;
+            const uOut = document.getElementById('press-unit-out').value;
+
+            let inBar = 0;
+            switch(uIn) {
+                case 'bar': inBar = val; break;
+                case 'mbar': inBar = val / 1000; break;
+                case 'mca': inBar = val / 10.1972; break;
+                case 'pascal': inBar = val / 100000; break;
+                case 'kpa': inBar = val / 100; break;
+                case 'psi': inBar = val / 14.5038; break;
+                case 'atm': inBar = val / 0.986923; break;
+            }
+
+            let res = 0;
+            switch(uOut) {
+                case 'bar': res = inBar; break;
+                case 'mbar': res = inBar * 1000; break;
+                case 'mca': res = inBar * 10.1972; break;
+                case 'pascal': res = inBar * 100000; break;
+                case 'kpa': res = inBar * 100; break;
+                case 'psi': res = inBar * 14.5038; break;
+                case 'atm': res = inBar * 0.986923; break;
+            }
+            document.getElementById('press-out').value = res.toFixed(4);
+        }
+
+        function convertPower() {
+            const val = parseFloat(document.getElementById('power-in').value) || 0;
+            const uIn = document.getElementById('power-unit-in').value;
+            const uOut = document.getElementById('power-unit-out').value;
+
+            let inKw = 0;
+            switch(uIn) {
+                case 'kw': inKw = val; break;
+                case 'w': inKw = val / 1000; break;
+                case 'kcalh': inKw = val / 860.421; break;
+                case 'btuh': inKw = val / 3412.14; break;
+            }
+
+            let res = 0;
+            switch(uOut) {
+                case 'kw': res = inKw; break;
+                case 'w': res = inKw * 1000; break;
+                case 'kcalh': res = inKw * 860.421; break;
+                case 'btuh': res = inKw * 3412.14; break;
+            }
+            document.getElementById('power-out').value = res.toFixed(2);
+        }
+
+        function convertFlow() {
+            const val = parseFloat(document.getElementById('flow-in').value) || 0;
+            const uIn = document.getElementById('flow-unit-in').value;
+            const uOut = document.getElementById('flow-unit-out').value;
+
+            let inM3h = 0;
+            switch(uIn) {
+                case 'lh': inM3h = val / 1000; break;
+                case 'lmin': inM3h = val * 60 / 1000; break;
+                case 'ls': inM3h = val * 3600 / 1000; break;
+                case 'm3h': inM3h = val; break;
+            }
+
+            let res = 0;
+            switch(uOut) {
+                case 'lh': res = inM3h * 1000; break;
+                case 'lmin': res = inM3h * 1000 / 60; break;
+                case 'ls': res = inM3h * 1000 / 3600; break;
+                case 'm3h': res = inM3h; break;
+            }
+            document.getElementById('flow-out').value = res.toFixed(2);
+        }
+
+        function convertTemp() {
+            const val = parseFloat(document.getElementById('temp-in').value) || 0;
+            const uIn = document.getElementById('temp-unit-in').value;
+            const uOut = document.getElementById('temp-unit-out').value;
+
+            let inC = 0;
+            if(uIn === 'c') inC = val;
+            else if(uIn === 'f') inC = (val - 32) * 5/9;
+            else if(uIn === 'k') inC = val - 273.15;
+
+            let res = 0;
+            if(uOut === 'c') res = inC;
+            else if(uOut === 'f') res = (inC * 9/5) + 32;
+            else if(uOut === 'k') res = inC + 273.15;
+
+            document.getElementById('temp-out').value = res.toFixed(2);
+        }
+
+        function convertEnergy() {
+            const val = parseFloat(document.getElementById('energy-in').value) || 0;
+            const uIn = document.getElementById('energy-unit-in').value;
+            const uOut = document.getElementById('energy-unit-out').value;
+
+            let inKwh = 0;
+            switch(uIn) {
+                case 'kwh': inKwh = val; break;
+                case 'mj': inKwh = val / 3.6; break;
+                case 'kcal': inKwh = val / 860.421; break;
+                case 'btu': inKwh = val / 3412.14; break;
+            }
+
+            let res = 0;
+            switch(uOut) {
+                case 'kwh': res = inKwh; break;
+                case 'mj': res = inKwh * 3.6; break;
+                case 'kcal': res = inKwh * 860.421; break;
+                case 'btu': res = inKwh * 3412.14; break;
+            }
+            document.getElementById('energy-out').value = res.toFixed(2);
+        }
+
+        function convertVolume() {
+            const val = parseFloat(document.getElementById('vol-in').value) || 0;
+            const uIn = document.getElementById('vol-unit-in').value;
+            const uOut = document.getElementById('vol-unit-out').value;
+
+            let inL = 0;
+            switch(uIn) {
+                case 'm3': inL = val * 1000; break;
+                case 'l': inL = val; break;
+                case 'gal': inL = val * 3.78541; break;
+            }
+
+            let res = 0;
+            switch(uOut) {
+                case 'm3': res = inL / 1000; break;
+                case 'l': res = inL; break;
+                case 'gal': res = inL / 3.78541; break;
+            }
+            document.getElementById('vol-out').value = res.toFixed(2);
+        }
+
+        // ===== CALCOLATORE IVA BENI SIGNIFICATIVI =====
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(val);
+        }
+
+        function calcolaIVA() {
+            const bene = parseFloat(document.getElementById('valoreBene').value) || 0;
+            const manodopera = parseFloat(document.getElementById('valoreManodopera').value) || 0;
+            const resultsDiv = document.getElementById('ivaResults');
+
+            if (bene <= 0 && manodopera <= 0) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
+
+            resultsDiv.style.display = 'block';
+
+            const totaleImponibile = bene + manodopera;
+            const sogliaMeta = totaleImponibile / 2;
+
+            let imp10 = 0;
+            let imp22 = 0;
+
+            const caseBadge = document.getElementById('caseBadge');
+            const explanNote = document.getElementById('explanNote');
+
+            if (bene <= sogliaMeta) {
+                // Caso 1: il bene è ≤ 50% del totale
+                imp10 = totaleImponibile;
+                imp22 = 0;
+                caseBadge.className = "iva-case-badge iva-case-1";
+                caseBadge.textContent = "CASO 1: Bene Significativo ≤ 50% del Totale";
+                explanNote.textContent = "Poiché il valore del bene significativo non supera il 50% dell'importo totale della prestazione, l'intero imponibile beneficia dell'IVA agevolata al 10%.";
+            } else {
+                // Caso 2: il bene è > 50% del totale
+                imp10 = manodopera * 2;
+                imp22 = totaleImponibile - imp10;
+                caseBadge.className = "iva-case-badge iva-case-2";
+                caseBadge.textContent = "CASO 2: Bene Significativo > 50% del Totale";
+                explanNote.innerHTML = `Il valore del bene supera il 50% del totale. L'IVA al 10% si applica sulla manodopera/materiali (${formatCurrency(manodopera)}) e su una pari quota del bene (${formatCurrency(manodopera)}). La parte rimanente del bene (${formatCurrency(imp22)}) sconta l'IVA ordinaria al 22%.`;
+            }
+
+            const iva10Val = imp10 * 0.10;
+            const iva22Val = imp22 * 0.22;
+            const totIVAVal = iva10Val + iva22Val;
+            const totFatturaVal = totaleImponibile + totIVAVal;
+
+            document.getElementById('imp10').textContent = formatCurrency(imp10);
+            document.getElementById('iva10').textContent = formatCurrency(iva10Val);
+            document.getElementById('imp22').textContent = formatCurrency(imp22);
+            document.getElementById('iva22').textContent = formatCurrency(iva22Val);
+            document.getElementById('totImponibile').textContent = formatCurrency(totaleImponibile);
+            document.getElementById('totIVA').textContent = formatCurrency(totIVAVal);
+            document.getElementById('totFattura').textContent = formatCurrency(totFatturaVal);
+        }
+    </script>
+
+    </div><!-- /.page-wrap -->
+</body>
+</html>
