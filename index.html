@@ -17,6 +17,13 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
     </script>
+    <!-- Word (docx) → HTML -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <!-- Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- HTML → canvas / PDF (per Word/Excel) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root {
             --bg-light: #dcdcdc;
@@ -979,6 +986,163 @@
             background-color: var(--card-bg);
             color: var(--text-main);
         }
+
+        /* ===== STRUMENTI PDF / DOCUMENTI ===== */
+        .pdf-tools-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+            margin-bottom: 1.25rem;
+        }
+        .pdf-tool-tab {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 0.85rem;
+            font-size: 0.88rem;
+            font-weight: 600;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--card-inner-bg);
+            color: var(--text-main);
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+        .pdf-tool-tab:hover {
+            border-color: var(--accent-orange);
+            color: var(--accent-orange);
+        }
+        .pdf-tool-tab.active {
+            background: var(--accent-orange);
+            border-color: var(--accent-orange);
+            color: #fff;
+        }
+        .pdf-tool-tab.active i { color: #fff; }
+        .pdf-tool-tab i { color: var(--accent-orange); }
+        .pdf-tool-panel { display: none; }
+        .pdf-tool-panel.active { display: block; }
+        .pdf-drop {
+            background: var(--card-inner-bg);
+            border: 2px dashed var(--accent-cyan);
+            border-radius: 10px;
+            padding: 1.35rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.2s, border-color 0.2s;
+            margin-bottom: 1rem;
+        }
+        .pdf-drop:hover, .pdf-drop.dragover {
+            background: #eef6fa;
+            border-color: var(--accent-orange);
+        }
+        body.dark-mode .pdf-drop:hover,
+        body.dark-mode .pdf-drop.dragover { background: #1a2a33; }
+        .pdf-drop input[type="file"] {
+            position: absolute; inset: 0; opacity: 0; cursor: pointer;
+        }
+        .pdf-drop h4 { font-size: 1.05rem; margin-bottom: 0.35rem; color: var(--text-main); }
+        .pdf-drop p { font-size: 0.85rem; color: var(--text-muted); }
+        .pdf-preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+            max-height: 520px;
+            overflow-y: auto;
+            padding: 0.35rem;
+            background: var(--card-inner-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        .pdf-preview-grid.large {
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            max-height: 620px;
+        }
+        .pdf-page-card {
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            cursor: grab;
+            user-select: none;
+            transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s;
+        }
+        .pdf-page-card.dragging { opacity: 0.45; border-color: var(--accent-orange); }
+        .pdf-page-card.drag-over { border-color: var(--accent-cyan); box-shadow: 0 0 0 3px rgba(0,119,170,0.2); }
+        .pdf-page-card .pg-label {
+            font-size: 0.8rem; font-weight: 700; color: var(--accent-orange);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .pdf-page-card .pg-img-wrap {
+            width: 100%; height: 260px; overflow: hidden; border-radius: 4px;
+            border: 1px solid var(--border-color); background: #f0f2f4;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .pdf-preview-grid.large .pdf-page-card .pg-img-wrap { height: 340px; }
+        .pdf-page-card .pg-img-wrap img {
+            max-width: 100%; max-height: 100%; object-fit: contain;
+            transition: transform 0.2s; transform-origin: center center;
+            background: #fff;
+        }
+        .pdf-page-card .pg-actions {
+            display: flex; gap: 0.3rem; flex-wrap: wrap; justify-content: center;
+        }
+        .pdf-page-card .pg-actions button {
+            flex: 1; min-width: 40px; padding: 0.35rem 0.4rem; font-size: 0.8rem;
+            border: 1px solid var(--border-color); border-radius: 5px;
+            background: #fff; color: var(--accent-cyan); cursor: pointer;
+        }
+        .pdf-page-card .pg-actions button:hover { background: var(--accent-cyan); color: #fff; }
+        .pdf-page-card .pg-actions button.danger { color: #e53e3e; border-color: #e53e3e; }
+        .pdf-page-card .pg-actions button.danger:hover { background: #e53e3e; color: #fff; }
+        body.dark-mode .pdf-page-card .pg-actions button { background: var(--card-bg); }
+        .pdf-tool-actions {
+            display: flex; flex-wrap: wrap; gap: 0.65rem; align-items: center; margin-top: 0.75rem;
+        }
+        .pdf-tool-actions .btn-action { margin-top: 0; width: auto; flex: 1; min-width: 180px; padding: 0.85rem 1rem; }
+        .pdf-tool-hint {
+            font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.75rem; line-height: 1.4;
+        }
+        .pdf-file-list {
+            display: flex; flex-direction: column; gap: 0.4rem; margin: 0.75rem 0;
+        }
+        .pdf-file-item {
+            display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.75rem;
+            background: var(--card-inner-bg); border: 1px solid var(--border-color);
+            border-radius: 6px; font-size: 0.9rem;
+        }
+        .pdf-file-item .fi-name { flex: 1; font-weight: 600; word-break: break-all; }
+        .pdf-file-item button {
+            border: none; background: transparent; color: #e53e3e; cursor: pointer; font-size: 1rem;
+        }
+        .compress-quality-row {
+            display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+            margin: 0.75rem 0; font-size: 0.9rem;
+        }
+        .compress-quality-row select {
+            width: auto; min-width: 160px; padding: 0.5rem 0.65rem;
+        }
+        .office-preview-frame {
+            max-height: 420px; overflow: auto; border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 1rem; background: #fff; margin: 0.75rem 0;
+            color: #212529; font-size: 0.95rem; line-height: 1.45;
+        }
+        body.dark-mode .office-preview-frame { background: #2a2a2a; color: var(--text-main); }
+        .split-range-row {
+            display: flex; gap: 0.5rem; align-items: flex-end; flex-wrap: wrap; margin: 0.75rem 0;
+        }
+        .split-range-row label { font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.2rem; }
+        .split-range-row input[type="number"] { width: 90px; padding: 0.45rem; }
+        @media (max-width: 700px) {
+            .word-grid, .excel-grid { grid-template-columns: 1fr !important; }
+            .pdf-preview-grid.large { grid-template-columns: 1fr; }
+            .pdf-page-card .pg-img-wrap { height: 220px !important; }
+            .archive-meta-grid { grid-template-columns: 1fr !important; }
+        }
     </style>
 </head>
 <body>
@@ -1338,6 +1502,214 @@
         </div>
     </div>
 
+    <!-- ===== STRUMENTI PDF E DOCUMENTI ===== -->
+    <div class="tool-card" id="pdf-tools-card">
+        <div class="card-header" onclick="toggleCard(this)">
+            <h2><i class="fa-solid fa-file-pdf"></i> Elaborazione PDF e documenti</h2>
+            <i class="fa-solid fa-chevron-down toggle-icon"></i>
+        </div>
+        <div class="card-body">
+            <p class="pdf-tool-hint" style="margin-top:0;">
+                Converti, ruota, riordina, unisci, dividi e comprimi file direttamente nel browser. Le anteprime sono leggibili e le operazioni restano sul tuo PC (nessun upload su server esterni).
+            </p>
+
+            <div class="pdf-tools-tabs" role="tablist">
+                <button type="button" class="pdf-tool-tab active" data-tool="img2pdf" onclick="switchPdfTool('img2pdf')"><i class="fa-solid fa-image"></i> Immagini → PDF</button>
+                <button type="button" class="pdf-tool-tab" data-tool="editpages" onclick="switchPdfTool('editpages')"><i class="fa-solid fa-arrows-rotate"></i> Ruota / Riordina / Elimina</button>
+                <button type="button" class="pdf-tool-tab" data-tool="merge" onclick="switchPdfTool('merge')"><i class="fa-solid fa-object-group"></i> Unisci PDF</button>
+                <button type="button" class="pdf-tool-tab" data-tool="split" onclick="switchPdfTool('split')"><i class="fa-solid fa-scissors"></i> Dividi PDF</button>
+                <button type="button" class="pdf-tool-tab" data-tool="compress" onclick="switchPdfTool('compress')"><i class="fa-solid fa-file-zipper"></i> Comprimi PDF</button>
+                <button type="button" class="pdf-tool-tab" data-tool="word" onclick="switchPdfTool('word')"><i class="fa-solid fa-file-word"></i> Word ↔ PDF</button>
+                <button type="button" class="pdf-tool-tab" data-tool="excel" onclick="switchPdfTool('excel')"><i class="fa-solid fa-file-excel"></i> Excel ↔ PDF</button>
+            </div>
+
+            <!-- 1. IMMAGINI → PDF -->
+            <div class="pdf-tool-panel active" id="panel-img2pdf">
+                <p class="pdf-tool-hint">Carica una o più immagini (JPG, PNG, WEBP…). Puoi riordinarle e ruotarle prima di generare il PDF.</p>
+                <div class="pdf-drop" id="drop-img2pdf" ondragover="pdfToolDragOver(event)" ondragleave="pdfToolDragLeave(event)" ondrop="pdfToolDrop(event, 'img2pdf')">
+                    <h4><i class="fa-solid fa-cloud-arrow-up" style="color:var(--accent-orange);"></i> Trascina immagini o clicca</h4>
+                    <p>JPG, PNG, WEBP, BMP — anche più file insieme</p>
+                    <input type="file" accept="image/*" multiple onchange="pdfToolFileSelect(event, 'img2pdf')">
+                </div>
+                <div class="pdf-preview-grid large" id="grid-img2pdf"></div>
+                <div class="pdf-tool-actions">
+                    <button type="button" class="btn-action" id="btn-img2pdf" onclick="runImg2Pdf()" disabled>
+                        <i class="fa-solid fa-file-pdf"></i> Genera e scarica PDF
+                    </button>
+                    <button type="button" onclick="clearPdfTool('img2pdf')" style="padding:0.85rem 1rem; border:1px solid var(--border-color); border-radius:6px; background:transparent; color:var(--text-muted); cursor:pointer; font-weight:600;">
+                        <i class="fa-solid fa-trash-can"></i> Svuota
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. MODIFICA PAGINE (ruota / riordina / elimina) -->
+            <div class="pdf-tool-panel" id="panel-editpages">
+                <p class="pdf-tool-hint">Carica un PDF, ruota le pagine (±90°), trascina per cambiare ordine, elimina quelle non necessarie, poi scarica il risultato.</p>
+                <div class="pdf-drop" id="drop-editpages" ondragover="pdfToolDragOver(event)" ondragleave="pdfToolDragLeave(event)" ondrop="pdfToolDrop(event, 'editpages')">
+                    <h4><i class="fa-solid fa-cloud-arrow-up" style="color:var(--accent-orange);"></i> Trascina un PDF o clicca</h4>
+                    <p>Un solo file PDF multi-pagina</p>
+                    <input type="file" accept="application/pdf" onchange="pdfToolFileSelect(event, 'editpages')">
+                </div>
+                <div class="pdf-preview-grid large" id="grid-editpages"></div>
+                <div class="pdf-tool-actions">
+                    <button type="button" class="btn-action" id="btn-editpages" onclick="runEditPages()" disabled>
+                        <i class="fa-solid fa-download"></i> Scarica PDF modificato
+                    </button>
+                    <button type="button" onclick="clearPdfTool('editpages')" style="padding:0.85rem 1rem; border:1px solid var(--border-color); border-radius:6px; background:transparent; color:var(--text-muted); cursor:pointer; font-weight:600;">
+                        <i class="fa-solid fa-trash-can"></i> Svuota
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3. UNISCI PDF -->
+            <div class="pdf-tool-panel" id="panel-merge">
+                <p class="pdf-tool-hint">Carica più PDF. Trascina le card per definire l’ordine di unione (tutte le pagine di ogni file, nell’ordine scelto).</p>
+                <div class="pdf-drop" id="drop-merge" ondragover="pdfToolDragOver(event)" ondragleave="pdfToolDragLeave(event)" ondrop="pdfToolDrop(event, 'merge')">
+                    <h4><i class="fa-solid fa-cloud-arrow-up" style="color:var(--accent-orange);"></i> Trascina PDF o clicca</h4>
+                    <p>Due o più file PDF</p>
+                    <input type="file" accept="application/pdf" multiple onchange="pdfToolFileSelect(event, 'merge')">
+                </div>
+                <div class="pdf-file-list" id="list-merge"></div>
+                <div class="pdf-tool-actions">
+                    <button type="button" class="btn-action" id="btn-merge" onclick="runMergePdf()" disabled>
+                        <i class="fa-solid fa-object-group"></i> Unisci e scarica
+                    </button>
+                    <button type="button" onclick="clearPdfTool('merge')" style="padding:0.85rem 1rem; border:1px solid var(--border-color); border-radius:6px; background:transparent; color:var(--text-muted); cursor:pointer; font-weight:600;">
+                        <i class="fa-solid fa-trash-can"></i> Svuota
+                    </button>
+                </div>
+            </div>
+
+            <!-- 4. DIVIDI PDF -->
+            <div class="pdf-tool-panel" id="panel-split">
+                <p class="pdf-tool-hint">Carica un PDF, visualizza le pagine e scarica un intervallo (es. 1–3) oppure ogni pagina come file separato.</p>
+                <div class="pdf-drop" id="drop-split" ondragover="pdfToolDragOver(event)" ondragleave="pdfToolDragLeave(event)" ondrop="pdfToolDrop(event, 'split')">
+                    <h4><i class="fa-solid fa-cloud-arrow-up" style="color:var(--accent-orange);"></i> Trascina un PDF o clicca</h4>
+                    <p>PDF multi-pagina da dividere</p>
+                    <input type="file" accept="application/pdf" onchange="pdfToolFileSelect(event, 'split')">
+                </div>
+                <div class="pdf-preview-grid" id="grid-split"></div>
+                <div class="split-range-row" id="split-range-controls" style="display:none;">
+                    <div>
+                        <label>Da pag.</label>
+                        <input type="number" id="splitFrom" min="1" value="1">
+                    </div>
+                    <div>
+                        <label>A pag.</label>
+                        <input type="number" id="splitTo" min="1" value="1">
+                    </div>
+                    <button type="button" class="btn-action" style="width:auto; margin:0; padding:0.55rem 1rem; font-size:0.9rem;" onclick="runSplitRange()">
+                        <i class="fa-solid fa-scissors"></i> Estrai intervallo
+                    </button>
+                    <button type="button" class="btn-action" style="width:auto; margin:0; padding:0.55rem 1rem; font-size:0.9rem; background:var(--accent-cyan);" onclick="runSplitAll()">
+                        <i class="fa-solid fa-copy"></i> Una pagina = un PDF
+                    </button>
+                </div>
+                <div class="pdf-tool-actions">
+                    <button type="button" onclick="clearPdfTool('split')" style="padding:0.85rem 1rem; border:1px solid var(--border-color); border-radius:6px; background:transparent; color:var(--text-muted); cursor:pointer; font-weight:600;">
+                        <i class="fa-solid fa-trash-can"></i> Svuota
+                    </button>
+                </div>
+            </div>
+
+            <!-- 5. COMPRIMI PDF -->
+            <div class="pdf-tool-panel" id="panel-compress">
+                <p class="pdf-tool-hint">Riduce il peso del PDF rasterizzando le pagine in JPEG a qualità regolabile. Ideale per invio email o portali.</p>
+                <div class="pdf-drop" id="drop-compress" ondragover="pdfToolDragOver(event)" ondragleave="pdfToolDragLeave(event)" ondrop="pdfToolDrop(event, 'compress')">
+                    <h4><i class="fa-solid fa-cloud-arrow-up" style="color:var(--accent-orange);"></i> Trascina un PDF o clicca</h4>
+                    <p>Il file originale non viene modificato</p>
+                    <input type="file" accept="application/pdf" onchange="pdfToolFileSelect(event, 'compress')">
+                </div>
+                <div id="compress-info" style="font-size:0.9rem; color:var(--text-muted); margin-bottom:0.5rem;"></div>
+                <div class="compress-quality-row" id="compress-quality-row" style="display:none;">
+                    <label for="compressQuality"><i class="fa-solid fa-sliders"></i> Qualità:</label>
+                    <select id="compressQuality">
+                        <option value="0.55">Bassa (file più leggero)</option>
+                        <option value="0.72" selected>Media (consigliata)</option>
+                        <option value="0.88">Alta (più nitida)</option>
+                    </select>
+                </div>
+                <div class="pdf-preview-grid" id="grid-compress"></div>
+                <div class="pdf-tool-actions">
+                    <button type="button" class="btn-action" id="btn-compress" onclick="runCompressPdf()" disabled>
+                        <i class="fa-solid fa-file-zipper"></i> Comprimi e scarica
+                    </button>
+                    <button type="button" onclick="clearPdfTool('compress')" style="padding:0.85rem 1rem; border:1px solid var(--border-color); border-radius:6px; background:transparent; color:var(--text-muted); cursor:pointer; font-weight:600;">
+                        <i class="fa-solid fa-trash-can"></i> Svuota
+                    </button>
+                </div>
+            </div>
+
+            <!-- 6. WORD ↔ PDF -->
+            <div class="pdf-tool-panel" id="panel-word">
+                <p class="pdf-tool-hint">
+                    <strong>Word → PDF:</strong> carica un file <code>.docx</code> (layout semplificato, ideale per documenti testuali).<br>
+                    <strong>PDF → Word:</strong> estrae il testo in un file <code>.doc</code> leggibile con Word (senza layout grafico originale).
+                </p>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;" class="word-grid">
+                    <div>
+                        <h4 style="font-size:0.95rem; color:var(--accent-cyan); margin-bottom:0.5rem;"><i class="fa-solid fa-file-word"></i> Word → PDF</h4>
+                        <div class="pdf-drop" id="drop-word2pdf" ondragover="pdfToolDragOver(event)" ondragleave="pdfToolDragLeave(event)" ondrop="pdfToolDrop(event, 'word2pdf')">
+                            <h4 style="font-size:0.95rem;"><i class="fa-solid fa-cloud-arrow-up" style="color:var(--accent-orange);"></i> .docx</h4>
+                            <p>Trascina o clicca</p>
+                            <input type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onchange="pdfToolFileSelect(event, 'word2pdf')">
+                        </div>
+                        <div class="office-preview-frame" id="preview-word2pdf" style="display:none;"></div>
+                        <button type="button" class="btn-action" id="btn-word2pdf" onclick="runWord2Pdf()" disabled style="margin-top:0.5rem;">
+                            <i class="fa-solid fa-file-pdf"></i> Converti in PDF
+                        </button>
+                    </div>
+                    <div>
+                        <h4 style="font-size:0.95rem; color:var(--accent-cyan); margin-bottom:0.5rem;"><i class="fa-solid fa-file-pdf"></i> PDF → Word (testo)</h4>
+                        <div class="pdf-drop" id="drop-pdf2word" ondragover="pdfToolDragOver(event)" ondragleave="pdfToolDragLeave(event)" ondrop="pdfToolDrop(event, 'pdf2word')">
+                            <h4 style="font-size:0.95rem;"><i class="fa-solid fa-cloud-arrow-up" style="color:var(--accent-orange);"></i> PDF</h4>
+                            <p>Estrae il testo</p>
+                            <input type="file" accept="application/pdf" onchange="pdfToolFileSelect(event, 'pdf2word')">
+                        </div>
+                        <div id="info-pdf2word" style="font-size:0.85rem; color:var(--text-muted); margin:0.4rem 0;"></div>
+                        <button type="button" class="btn-action" id="btn-pdf2word" onclick="runPdf2Word()" disabled style="margin-top:0.5rem;">
+                            <i class="fa-solid fa-file-word"></i> Scarica .doc
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. EXCEL ↔ PDF -->
+            <div class="pdf-tool-panel" id="panel-excel">
+                <p class="pdf-tool-hint">
+                    <strong>Excel → PDF:</strong> converte il foglio attivo in PDF tabellare.<br>
+                    <strong>PDF → Excel:</strong> estrae il testo riga per riga in un foglio <code>.xlsx</code> (utile per PDF testuali, non per scansioni).
+                </p>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;" class="excel-grid">
+                    <div>
+                        <h4 style="font-size:0.95rem; color:var(--accent-cyan); margin-bottom:0.5rem;"><i class="fa-solid fa-file-excel"></i> Excel → PDF</h4>
+                        <div class="pdf-drop" id="drop-excel2pdf" ondragover="pdfToolDragOver(event)" ondragleave="pdfToolDragLeave(event)" ondrop="pdfToolDrop(event, 'excel2pdf')">
+                            <h4 style="font-size:0.95rem;"><i class="fa-solid fa-cloud-arrow-up" style="color:var(--accent-orange);"></i> .xlsx / .xls</h4>
+                            <p>Trascina o clicca</p>
+                            <input type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" onchange="pdfToolFileSelect(event, 'excel2pdf')">
+                        </div>
+                        <div class="office-preview-frame" id="preview-excel2pdf" style="display:none;"></div>
+                        <button type="button" class="btn-action" id="btn-excel2pdf" onclick="runExcel2Pdf()" disabled style="margin-top:0.5rem;">
+                            <i class="fa-solid fa-file-pdf"></i> Converti in PDF
+                        </button>
+                    </div>
+                    <div>
+                        <h4 style="font-size:0.95rem; color:var(--accent-cyan); margin-bottom:0.5rem;"><i class="fa-solid fa-file-pdf"></i> PDF → Excel (testo)</h4>
+                        <div class="pdf-drop" id="drop-pdf2excel" ondragover="pdfToolDragOver(event)" ondragleave="pdfToolDragLeave(event)" ondrop="pdfToolDrop(event, 'pdf2excel')">
+                            <h4 style="font-size:0.95rem;"><i class="fa-solid fa-cloud-arrow-up" style="color:var(--accent-orange);"></i> PDF</h4>
+                            <p>Estrae testo in foglio</p>
+                            <input type="file" accept="application/pdf" onchange="pdfToolFileSelect(event, 'pdf2excel')">
+                        </div>
+                        <div id="info-pdf2excel" style="font-size:0.85rem; color:var(--text-muted); margin:0.4rem 0;"></div>
+                        <button type="button" class="btn-action" id="btn-pdf2excel" onclick="runPdf2Excel()" disabled style="margin-top:0.5rem;">
+                            <i class="fa-solid fa-file-excel"></i> Scarica .xlsx
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- SEZIONE UNIFICATA: ARCHIVIAZIONE DOCUMENTI -->
     <div class="tool-card" id="archive-card">
         <div class="card-header" onclick="toggleCard(this)">
@@ -1368,9 +1740,54 @@
                 <span><i class="fa-solid fa-file-zipper"></i> Comprimi PDF in uscita (immagini a qualità media, ideale per email/portali)</span>
             </label>
 
+            <!-- Campi cliente / prodotto per struttura cartelle -->
+            <div style="background:var(--card-inner-bg); border:1px solid var(--border-color); border-radius:10px; padding:1rem 1.15rem; margin:1rem 0 0.75rem;">
+                <h4 style="font-size:0.95rem; color:var(--accent-cyan); margin-bottom:0.75rem; display:flex; align-items:center; gap:0.4rem;">
+                    <i class="fa-solid fa-folder-tree"></i> Struttura cartelle di salvataggio
+                </h4>
+                <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:0.75rem; line-height:1.4;">
+                    Percorso base: <code style="font-size:0.8rem;">Z:\CONDIVISA\Preventivi\02_CLIENTI</code><br>
+                    <span id="archiveBaseFolderStatus">La cartella base va selezionata <strong>una sola volta</strong> (poi resta memorizzata).</span>
+                </p>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem;" class="archive-meta-grid">
+                    <div class="iva-input-group">
+                        <label for="archiveClientName">Nome cliente</label>
+                        <input type="text" id="archiveClientName" placeholder="Es. Mario Rossi" autocomplete="off"
+                               style="width:100%; padding:0.65rem 0.75rem; font-size:1rem; border:1px solid var(--border-color); border-radius:6px; background:var(--input-bg); color:var(--text-main);"
+                               oninput="updateArchivePathPreview()">
+                    </div>
+                    <div class="iva-input-group">
+                        <label for="archiveProductType">Tipo prodotto</label>
+                        <select id="archiveProductType"
+                                style="width:100%; padding:0.65rem 0.75rem; font-size:1rem; border:1px solid var(--border-color); border-radius:6px; background:var(--input-bg); color:var(--text-main);"
+                                onchange="updateArchivePathPreview()">
+                            <option value="">— Seleziona —</option>
+                            <option value="CALDAIA">CALDAIA</option>
+                            <option value="IBRIDA">IBRIDA</option>
+                            <option value="CONDIZIONATORE">CONDIZIONATORE</option>
+                            <option value="SCALDABAGNO ELETTRICO">SCALDABAGNO ELETTRICO</option>
+                            <option value="SCALDABAGNO A GAS">SCALDABAGNO A GAS</option>
+                        </select>
+                    </div>
+                </div>
+                <p id="archivePathPreview" style="margin-top:0.75rem; font-size:0.82rem; color:var(--text-muted); line-height:1.45;">
+                    Compila nome cliente e tipo prodotto per vedere il percorso.
+                </p>
+                <p style="margin-top:0.4rem; font-size:0.78rem; color:var(--text-muted);">
+                    <i class="fa-solid fa-info-circle"></i>
+                    <strong>02_DDC</strong> sempre: anagrafica, preventivo, IVA, Enea, CT, visura, bollette, modello 12, personalizzati.<br>
+                    <strong>09_FINANZIAMENTO</strong> solo se presente <em>Dati finanziamento</em> o <em>Modulo di consegna</em>
+                    (allora ci finiscono anche identità, tessera, buste paga / cedolino / redditi). Altrimenti identità e tessera vanno in <strong>02_DDC</strong>.
+                </p>
+            </div>
+
             <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.25rem;">
                 <button class="btn-action" id="saveDocsBtn" onclick="saveAllDocsToFolder()" disabled style="flex:1; min-width:200px; margin-top:0;">
-                    <i class="fa-solid fa-folder-open"></i> Scegli cartella e salva tutti i PDF
+                    <i class="fa-solid fa-floppy-disk"></i> Salva in archivio clienti
+                </button>
+                <button type="button" id="changeBaseFolderBtn" onclick="resetArchiveBaseFolder()"
+                        style="flex:0 0 auto; margin-top:0; padding:1rem 1rem; font-size:0.85rem; font-weight:600; border-radius:6px; border:1px solid var(--border-color); background:transparent; color:var(--text-muted); cursor:pointer;">
+                    <i class="fa-solid fa-folder-open"></i> Cambia cartella base
                 </button>
                 <button type="button" id="clearAllBoxesBtn" onclick="clearAllBoxes()" disabled
                         style="flex:0 0 auto; margin-top:0; padding:1rem 1.15rem; font-size:0.95rem; font-weight:700; text-transform:uppercase; border-radius:6px; border:2px solid #e53e3e; background:transparent; color:#e53e3e; cursor:pointer; transition:background 0.2s, color 0.2s;">
@@ -1378,7 +1795,7 @@
                 </button>
             </div>
             <p id="saveFolderHint" style="margin-top:0.6rem; font-size:0.82rem; color:var(--text-muted); text-align:center;">
-                Chrome / Edge: salvataggio diretto nella cartella scelta. Altri browser: download dei singoli file.
+                Chrome / Edge consigliati. La prima volta selezioni <strong>02_CLIENTI</strong>; le volte successive il salvataggio è automatico.
             </p>
         </div>
     </div>
@@ -1511,26 +1928,182 @@
 
         const clientDocs = {};
 
+        // folder: sottocartella di destinazione sotto NomeCliente/TipoProdotto/
         const docNames = [
-            { id: 1, name: "Anagrafica + privacy", icon: "fa-file-signature", desc: "Trascina file o clicca" },
-            { id: 2, name: "Preventivo firmato", icon: "fa-file-contract", desc: "Trascina file o clicca" },
-            { id: 3, name: "Dichiarazione IVA agevolata", icon: "fa-percent", desc: "Trascina file o clicca" },
-            { id: 4, name: "Modulo Enea", icon: "fa-leaf", desc: "Trascina file o clicca" },
-            { id: 5, name: "Documento di identità", icon: "fa-id-card", desc: "Fronte e Retro (o PDF)" },
-            { id: 6, name: "Tessera sanitaria", icon: "fa-credit-card", desc: "Fronte e Retro (o PDF)" },
-            { id: 7, name: "Richiesta dati finanziamento", icon: "fa-piggy-bank", desc: "Trascina file o clicca" },
-            { id: 8, name: "Modulo di consegna", icon: "fa-truck-ramp-box", desc: "Trascina file o clicca" },
-            { id: 9, name: "Busta paga", icon: "fa-money-bill-wave", desc: "Trascina file o clicca" },
-            { id: 10, name: "Cedolino pensione", icon: "fa-receipt", desc: "Trascina file o clicca" },
-            { id: 11, name: "Dichiarazione dei redditi", icon: "fa-file-invoice-dollar", desc: "Trascina file o clicca" },
-            { id: 12, name: "Modello 12 - Mandato irrevocabile all'incasso", icon: "fa-hand-holding-dollar", desc: "Trascina file o clicca" },
-            { id: 13, name: "Modulo affidamento Conto termico 3.0", icon: "fa-solar-panel", desc: "Trascina file o clicca" },
-            { id: 14, name: "Visura catastale", icon: "fa-map-location-dot", desc: "Trascina file o clicca" },
-            { id: 15, name: "Bolletta luce", icon: "fa-bolt", desc: "Trascina file o clicca" },
-            { id: 16, name: "Bolletta gas", icon: "fa-fire", desc: "Trascina file o clicca" },
-            { id: 17, name: "Documento personalizzato 1", icon: "fa-pen-to-square", desc: "Scrivi il nome e trascina i file", custom: true },
-            { id: 18, name: "Documento personalizzato 2", icon: "fa-pen-to-square", desc: "Scrivi il nome e trascina i file", custom: true }
+            { id: 1, name: "Anagrafica + privacy", icon: "fa-file-signature", desc: "Trascina file o clicca", folder: "02_DDC" },
+            { id: 2, name: "Preventivo firmato", icon: "fa-file-contract", desc: "Trascina file o clicca", folder: "02_DDC" },
+            { id: 3, name: "Dichiarazione IVA agevolata", icon: "fa-percent", desc: "Trascina file o clicca", folder: "02_DDC" },
+            { id: 4, name: "Modulo Enea", icon: "fa-leaf", desc: "Trascina file o clicca", folder: "02_DDC" },
+            { id: 5, name: "Documento di identità", icon: "fa-id-card", desc: "Fronte e Retro (o PDF)", folder: "09_FINANZIAMENTO" },
+            { id: 6, name: "Tessera sanitaria", icon: "fa-credit-card", desc: "Fronte e Retro (o PDF)", folder: "09_FINANZIAMENTO" },
+            { id: 7, name: "Richiesta dati finanziamento", icon: "fa-piggy-bank", desc: "Trascina file o clicca", folder: "09_FINANZIAMENTO" },
+            { id: 8, name: "Modulo di consegna", icon: "fa-truck-ramp-box", desc: "Trascina file o clicca", folder: "09_FINANZIAMENTO" },
+            { id: 9, name: "Busta paga", icon: "fa-money-bill-wave", desc: "Trascina file o clicca", folder: "09_FINANZIAMENTO" },
+            { id: 10, name: "Cedolino pensione", icon: "fa-receipt", desc: "Trascina file o clicca", folder: "09_FINANZIAMENTO" },
+            { id: 11, name: "Dichiarazione dei redditi", icon: "fa-file-invoice-dollar", desc: "Trascina file o clicca", folder: "09_FINANZIAMENTO" },
+            { id: 12, name: "Modello 12 - Mandato irrevocabile all'incasso", icon: "fa-hand-holding-dollar", desc: "Trascina file o clicca", folder: "02_DDC" },
+            { id: 13, name: "Modulo affidamento Conto termico 3.0", icon: "fa-solar-panel", desc: "Trascina file o clicca", folder: "02_DDC" },
+            { id: 14, name: "Visura catastale", icon: "fa-map-location-dot", desc: "Trascina file o clicca", folder: "02_DDC" },
+            { id: 15, name: "Bolletta luce", icon: "fa-bolt", desc: "Trascina file o clicca", folder: "02_DDC" },
+            { id: 16, name: "Bolletta gas", icon: "fa-fire", desc: "Trascina file o clicca", folder: "02_DDC" },
+            { id: 17, name: "Documento personalizzato 1", icon: "fa-pen-to-square", desc: "Scrivi il nome e trascina i file", custom: true, folder: "02_DDC" },
+            { id: 18, name: "Documento personalizzato 2", icon: "fa-pen-to-square", desc: "Scrivi il nome e trascina i file", custom: true, folder: "02_DDC" }
         ];
+
+        // 09_FINANZIAMENTO solo se presenti box 7 (dati finanziamento) o 8 (modulo consegna)
+        function hasFinanziamentoTrigger() {
+            const hasDati = clientDocs[7] && clientDocs[7].length > 0;
+            const hasConsegna = clientDocs[8] && clientDocs[8].length > 0;
+            return !!(hasDati || hasConsegna);
+        }
+
+        // Box che, se c'è finanziamento, vanno in 09_FINANZIAMENTO
+        const FINANZIAMENTO_BOX_IDS = new Set([5, 6, 7, 8, 9, 10, 11]);
+        // 5 identità, 6 tessera, 7 dati fin, 8 consegna, 9 busta, 10 cedolino, 11 redditi
+
+        function getDocFolder(boxId) {
+            const id = Number(boxId);
+            if (hasFinanziamentoTrigger() && FINANZIAMENTO_BOX_IDS.has(id)) {
+                return '09_FINANZIAMENTO';
+            }
+            return '02_DDC';
+        }
+
+        function updateArchivePathPreview() {
+            const client = (document.getElementById('archiveClientName')?.value || '').trim() || 'Nome cliente';
+            const product = (document.getElementById('archiveProductType')?.value || '').trim() || 'TIPO PRODOTTO';
+            const el = document.getElementById('archivePathPreview');
+            if (!el) return;
+            const fin = hasFinanziamentoTrigger();
+            let html = `Percorso: <code style="font-size:0.8rem;">Z:\\CONDIVISA\\Preventivi\\02_CLIENTI\\<strong>${safeFileName(client)}</strong>\\<strong>${safeFileName(product)}</strong>\\02_DDC</code>`;
+            if (fin) {
+                html += ` + <code style="font-size:0.8rem;">...\\09_FINANZIAMENTO</code> <span style="color:var(--accent-green);">(attivo: dati fin. o modulo consegna presenti)</span>`;
+            } else {
+                html += ` <span style="color:var(--text-muted);">· 09_FINANZIAMENTO non creato (identità/tessera → 02_DDC)</span>`;
+            }
+            el.innerHTML = html;
+        }
+
+        // ---- Memoria cartella base 02_CLIENTI (IndexedDB) ----
+        const ARCHIVE_DB_NAME = 'termocinque-archive';
+        const ARCHIVE_STORE = 'handles';
+        const ARCHIVE_KEY = 'base02Clienti';
+
+        function openArchiveDb() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(ARCHIVE_DB_NAME, 1);
+                req.onupgradeneeded = () => {
+                    const db = req.result;
+                    if (!db.objectStoreNames.contains(ARCHIVE_STORE)) {
+                        db.createObjectStore(ARCHIVE_STORE);
+                    }
+                };
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        async function saveBaseDirHandle(handle) {
+            const db = await openArchiveDb();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(ARCHIVE_STORE, 'readwrite');
+                tx.objectStore(ARCHIVE_STORE).put(handle, ARCHIVE_KEY);
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+            });
+        }
+
+        async function loadBaseDirHandle() {
+            try {
+                const db = await openArchiveDb();
+                return await new Promise((resolve, reject) => {
+                    const tx = db.transaction(ARCHIVE_STORE, 'readonly');
+                    const req = tx.objectStore(ARCHIVE_STORE).get(ARCHIVE_KEY);
+                    req.onsuccess = () => resolve(req.result || null);
+                    req.onerror = () => reject(req.error);
+                });
+            } catch (e) {
+                return null;
+            }
+        }
+
+        async function clearBaseDirHandle() {
+            try {
+                const db = await openArchiveDb();
+                await new Promise((resolve, reject) => {
+                    const tx = db.transaction(ARCHIVE_STORE, 'readwrite');
+                    tx.objectStore(ARCHIVE_STORE).delete(ARCHIVE_KEY);
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = () => reject(tx.error);
+                });
+            } catch (e) { /* ignore */ }
+        }
+
+        async function ensureBaseDirPermission(handle) {
+            if (!handle) return null;
+            try {
+                let perm = await handle.queryPermission({ mode: 'readwrite' });
+                if (perm === 'granted') return handle;
+                perm = await handle.requestPermission({ mode: 'readwrite' });
+                if (perm === 'granted') return handle;
+            } catch (e) {
+                console.warn('Permesso cartella base non disponibile', e);
+            }
+            return null;
+        }
+
+        async function getOrPickBaseDirHandle(forcePick = false) {
+            if (!forcePick) {
+                const stored = await loadBaseDirHandle();
+                const ok = await ensureBaseDirPermission(stored);
+                if (ok) return ok;
+            }
+            if (typeof window.showDirectoryPicker !== 'function') return null;
+            const handle = await window.showDirectoryPicker({
+                mode: 'readwrite',
+                startIn: 'documents'
+            });
+            await saveBaseDirHandle(handle);
+            updateArchiveBaseFolderStatus(true);
+            return handle;
+        }
+
+        function updateArchiveBaseFolderStatus(linked) {
+            const el = document.getElementById('archiveBaseFolderStatus');
+            if (!el) return;
+            if (linked) {
+                el.innerHTML = '<span style="color:var(--accent-green);"><i class="fa-solid fa-link"></i> Cartella base collegata e memorizzata. I salvataggi successivi non richiederanno di risceglierla.</span>';
+            } else {
+                el.innerHTML = 'La cartella base va selezionata <strong>una sola volta</strong> (poi resta memorizzata).';
+            }
+        }
+
+        async function resetArchiveBaseFolder() {
+            await clearBaseDirHandle();
+            updateArchiveBaseFolderStatus(false);
+            const hint = document.getElementById('saveFolderHint');
+            if (hint) {
+                hint.innerHTML = '<span style="color:var(--text-muted);">Cartella base scollegata. Al prossimo salvataggio dovrai riscegliere <strong>02_CLIENTI</strong>.</span>';
+            }
+            try {
+                const handle = await getOrPickBaseDirHandle(true);
+                if (handle) {
+                    if (hint) hint.innerHTML = '<span style="color:var(--accent-green);"><i class="fa-solid fa-circle-check"></i> Nuova cartella base collegata.</span>';
+                }
+            } catch (e) {
+                if (e && e.name === 'AbortError') return;
+                console.warn(e);
+            }
+        }
+
+        // All'avvio: verifica se c'è già una cartella memorizzata
+        (async function initArchiveBaseFolderStatus() {
+            const stored = await loadBaseDirHandle();
+            if (stored) {
+                const ok = await ensureBaseDirPermission(stored);
+                updateArchiveBaseFolderStatus(!!ok);
+            }
+        })();
 
         function getDocDisplayName(boxId) {
             const doc = docNames.find(d => d.id == boxId);
@@ -1578,6 +2151,7 @@
             convertTemp();
             convertEnergy();
             convertVolume();
+            if (typeof updateArchivePathPreview === 'function') updateArchivePathPreview();
 
             // Dark mode
             const darkToggle = document.getElementById('darkModeToggle');
@@ -1678,6 +2252,7 @@
                 clearBtn.style.opacity = hasAny ? '1' : '0.45';
                 clearBtn.style.cursor = hasAny ? 'pointer' : 'not-allowed';
             }
+            if (typeof updateArchivePathPreview === 'function') updateArchivePathPreview();
         }
 
         function clearAllBoxes() {
@@ -1812,44 +2387,60 @@
                 .slice(0, 120);
         }
 
+        async function ensureDir(parentHandle, name) {
+            return await parentHandle.getDirectoryHandle(safeFileName(name) || 'cartella', { create: true });
+        }
+
         async function saveAllDocsToFolder() {
             const compress = document.getElementById('compressPdfOption').checked;
             const btn = document.getElementById('saveDocsBtn');
             const hint = document.getElementById('saveFolderHint');
+
+            const clientRaw = (document.getElementById('archiveClientName')?.value || '').trim();
+            const productRaw = (document.getElementById('archiveProductType')?.value || '').trim();
+
+            if (!clientRaw) {
+                alert('Inserisci il nome del cliente prima di salvare.');
+                document.getElementById('archiveClientName')?.focus();
+                return;
+            }
+            if (!productRaw) {
+                alert('Seleziona il tipo prodotto prima di salvare.');
+                document.getElementById('archiveProductType')?.focus();
+                return;
+            }
+
+            const clientName = safeFileName(clientRaw);
+            const productType = safeFileName(productRaw);
+
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Preparazione...';
 
             let dirHandle = null;
-            const canUseFolderPicker = typeof window.showDirectoryPicker === 'function';
 
             try {
-                if (canUseFolderPicker) {
-                    try {
-                        dirHandle = await window.showDirectoryPicker({
-                            mode: 'readwrite',
-                            startIn: 'documents'
-                        });
-                    } catch (pickerErr) {
-                        // Utente ha annullato o permesso negato
-                        if (pickerErr && pickerErr.name === 'AbortError') {
-                            return; // annullato: esci senza fare nulla
-                        }
-                        console.warn('Directory picker non disponibile, uso download:', pickerErr);
-                        dirHandle = null;
+                try {
+                    dirHandle = await getOrPickBaseDirHandle(false);
+                } catch (pickerErr) {
+                    if (pickerErr && pickerErr.name === 'AbortError') {
+                        return;
                     }
+                    console.warn('Directory picker non disponibile, uso download:', pickerErr);
+                    dirHandle = null;
                 }
 
-                // Genera tutti i PDF
+                // Genera tutti i PDF con destinazione cartella (logica dinamica finanziamento)
                 const outputs = [];
                 for (const boxId in clientDocs) {
                     const files = clientDocs[boxId];
                     if (!files || files.length === 0) continue;
                     const fileName = safeFileName(getDocDisplayName(boxId)) + '.pdf';
+                    const subFolder = getDocFolder(boxId);
 
                     btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Genero ${fileName}...`;
                     const pdfBytes = await buildPdfBytesForBox(boxId, compress);
                     if (pdfBytes) {
-                        outputs.push({ fileName, pdfBytes });
+                        outputs.push({ fileName, pdfBytes, subFolder });
                     }
                 }
 
@@ -1859,33 +2450,48 @@
                 }
 
                 if (dirHandle) {
-                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Scrittura in cartella...';
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creo cartelle e scrivo...';
+                    // 02_CLIENTI → Nome cliente → Tipo prodotto → 02_DDC [+ 09_FINANZIAMENTO se serve]
+                    const clientDir = await ensureDir(dirHandle, clientName);
+                    const productDir = await ensureDir(clientDir, productType);
+
+                    const subHandles = {};
                     let saved = 0;
-                    for (const { fileName, pdfBytes } of outputs) {
-                        const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
+                    const usedFolders = new Set();
+
+                    for (const { fileName, pdfBytes, subFolder } of outputs) {
+                        if (!subHandles[subFolder]) {
+                            subHandles[subFolder] = await ensureDir(productDir, subFolder);
+                        }
+                        usedFolders.add(subFolder);
+                        const fileHandle = await subHandles[subFolder].getFileHandle(fileName, { create: true });
                         const writable = await fileHandle.createWritable();
                         await writable.write(pdfBytes);
                         await writable.close();
                         saved++;
                     }
+
+                    const folderList = [...usedFolders].sort().join(', ');
                     if (hint) {
-                        hint.innerHTML = `<span style="color:var(--accent-green);"><i class="fa-solid fa-circle-check"></i> Salvati <strong>${saved}</strong> PDF nella cartella scelta.</span>`;
+                        hint.innerHTML = `<span style="color:var(--accent-green);"><i class="fa-solid fa-circle-check"></i> Salvati <strong>${saved}</strong> PDF in<br>
+                            <code style="font-size:0.8rem;">02_CLIENTI / ${clientName} / ${productType} / (${folderList})</code></span>`;
                     }
+                    updateArchivePathPreview();
                 } else {
-                    // Fallback: download uno a uno (Firefox, Safari, o picker non supportato)
+                    // Fallback: download con percorso nel nome file
                     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Download in corso...';
-                    for (const { fileName, pdfBytes } of outputs) {
+                    for (const { fileName, pdfBytes, subFolder } of outputs) {
+                        const downloadName = `${clientName}__${productType}__${subFolder}__${fileName}`;
                         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
                         const link = document.createElement('a');
                         link.href = URL.createObjectURL(blob);
-                        link.download = fileName;
+                        link.download = downloadName;
                         link.click();
                         URL.revokeObjectURL(link.href);
-                        // Piccola pausa per evitare che il browser blocchi download multipli
                         await new Promise(r => setTimeout(r, 250));
                     }
                     if (hint) {
-                        hint.innerHTML = `<span style="color:var(--accent-orange);"><i class="fa-solid fa-download"></i> Scaricati <strong>${outputs.length}</strong> file (il browser non supporta il salvataggio diretto in cartella).</span>`;
+                        hint.innerHTML = `<span style="color:var(--accent-orange);"><i class="fa-solid fa-download"></i> Scaricati <strong>${outputs.length}</strong> file. Usa Chrome/Edge e collega la cartella 02_CLIENTI per il salvataggio automatico in rete.</span>`;
                     }
                 }
             } catch (err) {
@@ -1893,7 +2499,7 @@
                 alert('Errore durante il salvataggio: ' + (err.message || err));
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-folder-open"></i> Scegli cartella e salva tutti i PDF';
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Salva in archivio clienti';
                 checkSaveButtonState();
             }
         }
@@ -3015,6 +3621,775 @@
             document.getElementById('totImponibile').textContent = formatCurrency(totaleImponibile);
             document.getElementById('totIVA').textContent = formatCurrency(totIVAVal);
             document.getElementById('totFattura').textContent = formatCurrency(totFatturaVal);
+        }
+
+        // ============================================================
+        // STRUMENTI PDF E DOCUMENTI
+        // ============================================================
+        const pdfToolState = {
+            img2pdf: [],      // { id, dataUrl, buffer, type, rotation, name }
+            editpages: [],    // { id, dataUrl, rotation, pdfBuffer, pageIndex }
+            editSourceName: '',
+            merge: [],        // { id, file, name, pages }
+            split: { doc: null, buffer: null, name: '', pageCount: 0, previews: {} },
+            compress: { buffer: null, name: '', pageCount: 0, previews: {} },
+            word2pdf: { html: '', name: '' },
+            pdf2word: { buffer: null, name: '' },
+            excel2pdf: { html: '', name: '' },
+            pdf2excel: { buffer: null, name: '' },
+            dragSrc: null,
+            dragTool: null
+        };
+
+        function switchPdfTool(toolId) {
+            document.querySelectorAll('.pdf-tool-tab').forEach(t => t.classList.toggle('active', t.dataset.tool === toolId));
+            document.querySelectorAll('.pdf-tool-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + toolId));
+        }
+
+        function pdfToolDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+        function pdfToolDragLeave(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+        }
+        function pdfToolDrop(e, tool) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files || []);
+            if (files.length) handlePdfToolFiles(tool, files);
+        }
+        function pdfToolFileSelect(e, tool) {
+            const files = Array.from(e.target.files || []);
+            e.target.value = '';
+            if (files.length) handlePdfToolFiles(tool, files);
+        }
+
+        function downloadBlob(blob, filename) {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+        }
+
+        async function renderPdfPagePreview(pdfJsDoc, pageNum, scale = 1.6) {
+            const page = await pdfJsDoc.getPage(pageNum);
+            const viewport = page.getViewport({ scale });
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+            return canvas.toDataURL('image/jpeg', 0.9);
+        }
+
+        function applyCardRotation(img, rot) {
+            const r = ((rot || 0) % 360 + 360) % 360;
+            if (r === 90 || r === 270) img.style.transform = `rotate(${r}deg) scale(0.78)`;
+            else if (r === 180) img.style.transform = 'rotate(180deg)';
+            else img.style.transform = '';
+        }
+
+        async function handlePdfToolFiles(tool, files) {
+            try {
+                if (tool === 'img2pdf') {
+                    for (const f of files) {
+                        if (!f.type.startsWith('image/')) continue;
+                        const buf = await f.arrayBuffer();
+                        const dataUrl = await new Promise(res => {
+                            const r = new FileReader();
+                            r.onload = () => res(r.result);
+                            r.readAsDataURL(new Blob([buf], { type: f.type }));
+                        });
+                        pdfToolState.img2pdf.push({
+                            id: Date.now() + Math.random(),
+                            dataUrl,
+                            buffer: buf.slice(0),
+                            type: f.type,
+                            rotation: 0,
+                            name: f.name
+                        });
+                    }
+                    renderImg2PdfGrid();
+                } else if (tool === 'editpages') {
+                    const f = files.find(x => x.type === 'application/pdf' || /\.pdf$/i.test(x.name));
+                    if (!f) { alert('Seleziona un file PDF.'); return; }
+                    await loadEditPagesPdf(f);
+                } else if (tool === 'merge') {
+                    for (const f of files) {
+                        if (f.type !== 'application/pdf' && !/\.pdf$/i.test(f.name)) continue;
+                        const buf = await f.arrayBuffer();
+                        const doc = await PDFLib.PDFDocument.load(buf.slice(0));
+                        pdfToolState.merge.push({
+                            id: Date.now() + Math.random(),
+                            file: f,
+                            buffer: buf.slice(0),
+                            name: f.name,
+                            pages: doc.getPageCount()
+                        });
+                    }
+                    renderMergeList();
+                } else if (tool === 'split') {
+                    const f = files.find(x => x.type === 'application/pdf' || /\.pdf$/i.test(x.name));
+                    if (!f) { alert('Seleziona un file PDF.'); return; }
+                    await loadSplitPdf(f);
+                } else if (tool === 'compress') {
+                    const f = files.find(x => x.type === 'application/pdf' || /\.pdf$/i.test(x.name));
+                    if (!f) { alert('Seleziona un file PDF.'); return; }
+                    await loadCompressPdf(f);
+                } else if (tool === 'word2pdf') {
+                    const f = files.find(x => /\.docx$/i.test(x.name) || x.type.includes('wordprocessingml'));
+                    if (!f) { alert('Seleziona un file .docx'); return; }
+                    await loadWordFile(f);
+                } else if (tool === 'pdf2word') {
+                    const f = files.find(x => x.type === 'application/pdf' || /\.pdf$/i.test(x.name));
+                    if (!f) { alert('Seleziona un PDF'); return; }
+                    pdfToolState.pdf2word = { buffer: await f.arrayBuffer(), name: f.name };
+                    document.getElementById('info-pdf2word').textContent = `File: ${f.name}`;
+                    document.getElementById('btn-pdf2word').disabled = false;
+                } else if (tool === 'excel2pdf') {
+                    const f = files.find(x => /\.xlsx?$/i.test(x.name) || x.type.includes('spreadsheet') || x.type.includes('excel'));
+                    if (!f) { alert('Seleziona un file Excel (.xlsx / .xls)'); return; }
+                    await loadExcelFile(f);
+                } else if (tool === 'pdf2excel') {
+                    const f = files.find(x => x.type === 'application/pdf' || /\.pdf$/i.test(x.name));
+                    if (!f) { alert('Seleziona un PDF'); return; }
+                    pdfToolState.pdf2excel = { buffer: await f.arrayBuffer(), name: f.name };
+                    document.getElementById('info-pdf2excel').textContent = `File: ${f.name}`;
+                    document.getElementById('btn-pdf2excel').disabled = false;
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Errore caricamento: ' + (err.message || err));
+            }
+        }
+
+        function clearPdfTool(tool) {
+            if (tool === 'img2pdf') {
+                pdfToolState.img2pdf = [];
+                renderImg2PdfGrid();
+            } else if (tool === 'editpages') {
+                pdfToolState.editpages = [];
+                pdfToolState.editSourceName = '';
+                document.getElementById('grid-editpages').innerHTML = '';
+                document.getElementById('btn-editpages').disabled = true;
+            } else if (tool === 'merge') {
+                pdfToolState.merge = [];
+                renderMergeList();
+            } else if (tool === 'split') {
+                pdfToolState.split = { doc: null, buffer: null, name: '', pageCount: 0, previews: {} };
+                document.getElementById('grid-split').innerHTML = '';
+                document.getElementById('split-range-controls').style.display = 'none';
+            } else if (tool === 'compress') {
+                pdfToolState.compress = { buffer: null, name: '', pageCount: 0, previews: {} };
+                document.getElementById('grid-compress').innerHTML = '';
+                document.getElementById('compress-info').textContent = '';
+                document.getElementById('compress-quality-row').style.display = 'none';
+                document.getElementById('btn-compress').disabled = true;
+            }
+        }
+
+        // ---- Immagini → PDF ----
+        function renderImg2PdfGrid() {
+            const grid = document.getElementById('grid-img2pdf');
+            grid.innerHTML = '';
+            const items = pdfToolState.img2pdf;
+            document.getElementById('btn-img2pdf').disabled = items.length === 0;
+
+            items.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'pdf-page-card';
+                card.draggable = true;
+                card.dataset.index = index;
+                card.innerHTML = `
+                    <div class="pg-label"><span>#${index + 1}</span><span style="font-size:0.7rem;color:var(--text-muted);font-weight:500;">${item.rotation ? item.rotation + '°' : ''}</span></div>
+                    <div class="pg-img-wrap"><img alt="img" src="${item.dataUrl}"></div>
+                    <div class="pg-actions">
+                        <button type="button" title="-90°"><i class="fa-solid fa-rotate-left"></i></button>
+                        <button type="button" title="+90°"><i class="fa-solid fa-rotate-right"></i></button>
+                        <button type="button" class="danger" title="Elimina"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                `;
+                const img = card.querySelector('img');
+                applyCardRotation(img, item.rotation);
+                const btns = card.querySelectorAll('.pg-actions button');
+                btns[0].onclick = (e) => { e.stopPropagation(); item.rotation = (item.rotation - 90 + 360) % 360; renderImg2PdfGrid(); };
+                btns[1].onclick = (e) => { e.stopPropagation(); item.rotation = (item.rotation + 90) % 360; renderImg2PdfGrid(); };
+                btns[2].onclick = (e) => { e.stopPropagation(); pdfToolState.img2pdf.splice(index, 1); renderImg2PdfGrid(); };
+                bindPdfCardDrag(card, 'img2pdf', index);
+                grid.appendChild(card);
+            });
+        }
+
+        function bindPdfCardDrag(card, tool, index) {
+            card.addEventListener('dragstart', (e) => {
+                pdfToolState.dragSrc = index;
+                pdfToolState.dragTool = tool;
+                card.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            });
+            card.addEventListener('dragend', () => {
+                card.classList.remove('dragging');
+                pdfToolState.dragSrc = null;
+                document.querySelectorAll('.pdf-page-card').forEach(c => c.classList.remove('drag-over'));
+            });
+            card.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                card.classList.add('drag-over');
+            });
+            card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
+            card.addEventListener('drop', (e) => {
+                e.preventDefault();
+                card.classList.remove('drag-over');
+                if (pdfToolState.dragTool !== tool || pdfToolState.dragSrc === null) return;
+                const from = pdfToolState.dragSrc;
+                const to = index;
+                if (from === to) return;
+                const arr = tool === 'img2pdf' ? pdfToolState.img2pdf : pdfToolState.editpages;
+                const moved = arr.splice(from, 1)[0];
+                arr.splice(to, 0, moved);
+                if (tool === 'img2pdf') renderImg2PdfGrid();
+                else renderEditPagesGrid();
+            });
+        }
+
+        async function rotateImageBufferLocal(arrayBuffer, degrees) {
+            return new Promise((resolve, reject) => {
+                const blob = new Blob([arrayBuffer]);
+                const url = URL.createObjectURL(blob);
+                const img = new Image();
+                img.onload = () => {
+                    const rad = (degrees * Math.PI) / 180;
+                    const sw = img.width, sh = img.height;
+                    const cw = (degrees === 90 || degrees === 270) ? sh : sw;
+                    const ch = (degrees === 90 || degrees === 270) ? sw : sh;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = cw; canvas.height = ch;
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(0, 0, cw, ch);
+                    ctx.translate(cw / 2, ch / 2);
+                    ctx.rotate(rad);
+                    ctx.drawImage(img, -sw / 2, -sh / 2);
+                    canvas.toBlob(async (b) => {
+                        URL.revokeObjectURL(url);
+                        if (!b) { reject(new Error('rotate fail')); return; }
+                        resolve(await b.arrayBuffer());
+                    }, 'image/jpeg', 0.92);
+                };
+                img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('img fail')); };
+                img.src = url;
+            });
+        }
+
+        async function runImg2Pdf() {
+            const items = pdfToolState.img2pdf;
+            if (!items.length) return;
+            const btn = document.getElementById('btn-img2pdf');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Genero...';
+            try {
+                const pdfDoc = await PDFLib.PDFDocument.create();
+                for (const item of items) {
+                    let buf = item.buffer.slice(0);
+                    if (item.rotation || (item.type && item.type.includes('png'))) {
+                        buf = await rotateImageBufferLocal(buf, item.rotation || 0);
+                    } else if (item.type && !item.type.includes('jpeg') && !item.type.includes('jpg')) {
+                        buf = await imageToCompressedJpegBytes(buf, 0.92);
+                    }
+                    const emb = await pdfDoc.embedJpg(buf);
+                    const page = pdfDoc.addPage([emb.width, emb.height]);
+                    page.drawImage(emb, { x: 0, y: 0, width: emb.width, height: emb.height });
+                }
+                const bytes = await pdfDoc.save();
+                downloadBlob(new Blob([bytes], { type: 'application/pdf' }), 'immagini.pdf');
+            } catch (err) {
+                console.error(err);
+                alert('Errore: ' + (err.message || err));
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Genera e scarica PDF';
+            }
+        }
+
+        // ---- Ruota / Riordina / Elimina ----
+        async function loadEditPagesPdf(file) {
+            const buf = await file.arrayBuffer();
+            const safe = buf.slice(0);
+            const pdfJs = await pdfjsLib.getDocument({ data: new Uint8Array(safe.slice(0)) }).promise;
+            const n = pdfJs.numPages;
+            pdfToolState.editpages = [];
+            pdfToolState.editSourceName = file.name;
+            for (let p = 1; p <= n; p++) {
+                const dataUrl = await renderPdfPagePreview(pdfJs, p, 1.7);
+                pdfToolState.editpages.push({
+                    id: p,
+                    dataUrl,
+                    rotation: 0,
+                    pdfBuffer: safe.slice(0),
+                    pageIndex: p - 1
+                });
+            }
+            renderEditPagesGrid();
+        }
+
+        function renderEditPagesGrid() {
+            const grid = document.getElementById('grid-editpages');
+            grid.innerHTML = '';
+            const items = pdfToolState.editpages;
+            document.getElementById('btn-editpages').disabled = items.length === 0;
+            items.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'pdf-page-card';
+                card.draggable = true;
+                card.dataset.index = index;
+                card.innerHTML = `
+                    <div class="pg-label"><span>Pag. ${index + 1}</span><span style="font-size:0.7rem;color:var(--text-muted);font-weight:500;">${item.rotation ? item.rotation + '°' : ''}</span></div>
+                    <div class="pg-img-wrap"><img alt="pag" src="${item.dataUrl}"></div>
+                    <div class="pg-actions">
+                        <button type="button" title="-90°"><i class="fa-solid fa-rotate-left"></i></button>
+                        <button type="button" title="+90°"><i class="fa-solid fa-rotate-right"></i></button>
+                        <button type="button" class="danger" title="Elimina"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                `;
+                applyCardRotation(card.querySelector('img'), item.rotation);
+                const btns = card.querySelectorAll('.pg-actions button');
+                btns[0].onclick = (e) => { e.stopPropagation(); item.rotation = (item.rotation - 90 + 360) % 360; renderEditPagesGrid(); };
+                btns[1].onclick = (e) => { e.stopPropagation(); item.rotation = (item.rotation + 90) % 360; renderEditPagesGrid(); };
+                btns[2].onclick = (e) => {
+                    e.stopPropagation();
+                    if (items.length <= 1) {
+                        if (!confirm('Eliminare l’ultima pagina? Il risultato sarà vuoto.')) return;
+                    }
+                    pdfToolState.editpages.splice(index, 1);
+                    renderEditPagesGrid();
+                };
+                bindPdfCardDrag(card, 'editpages', index);
+                grid.appendChild(card);
+            });
+        }
+
+        async function runEditPages() {
+            const items = pdfToolState.editpages;
+            if (!items.length) return;
+            const btn = document.getElementById('btn-editpages');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Genero...';
+            try {
+                const pdfDoc = await PDFLib.PDFDocument.create();
+                for (const item of items) {
+                    const donor = await PDFLib.PDFDocument.load(item.pdfBuffer.slice(0));
+                    const [copied] = await pdfDoc.copyPages(donor, [item.pageIndex]);
+                    if (item.rotation) {
+                        const cur = copied.getRotation().angle;
+                        copied.setRotation(PDFLib.degrees((cur + item.rotation) % 360));
+                    }
+                    pdfDoc.addPage(copied);
+                }
+                const bytes = await pdfDoc.save();
+                const base = (pdfToolState.editSourceName || 'documento').replace(/\.pdf$/i, '');
+                downloadBlob(new Blob([bytes], { type: 'application/pdf' }), base + '_modificato.pdf');
+            } catch (err) {
+                console.error(err);
+                alert('Errore: ' + (err.message || err));
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-download"></i> Scarica PDF modificato';
+            }
+        }
+
+        // ---- Unisci PDF ----
+        function renderMergeList() {
+            const list = document.getElementById('list-merge');
+            list.innerHTML = '';
+            const items = pdfToolState.merge;
+            document.getElementById('btn-merge').disabled = items.length < 1;
+            items.forEach((item, index) => {
+                const row = document.createElement('div');
+                row.className = 'pdf-file-item';
+                row.draggable = true;
+                row.dataset.index = index;
+                row.innerHTML = `
+                    <i class="fa-solid fa-grip-vertical" style="color:var(--text-muted);"></i>
+                    <span style="font-weight:700;color:var(--accent-orange);min-width:1.5rem;">${index + 1}.</span>
+                    <span class="fi-name">${item.name}</span>
+                    <span style="font-size:0.8rem;color:var(--text-muted);">${item.pages} pag.</span>
+                    <button type="button" title="Rimuovi"><i class="fa-solid fa-xmark"></i></button>
+                `;
+                row.querySelector('button').onclick = () => {
+                    pdfToolState.merge.splice(index, 1);
+                    renderMergeList();
+                };
+                row.addEventListener('dragstart', (e) => {
+                    pdfToolState.dragSrc = index;
+                    pdfToolState.dragTool = 'merge';
+                    row.style.opacity = '0.45';
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+                row.addEventListener('dragend', () => { row.style.opacity = '1'; pdfToolState.dragSrc = null; });
+                row.addEventListener('dragover', (e) => { e.preventDefault(); row.style.outline = '2px dashed var(--accent-cyan)'; });
+                row.addEventListener('dragleave', () => { row.style.outline = ''; });
+                row.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    row.style.outline = '';
+                    if (pdfToolState.dragTool !== 'merge' || pdfToolState.dragSrc === null) return;
+                    const from = pdfToolState.dragSrc;
+                    const to = index;
+                    if (from === to) return;
+                    const moved = pdfToolState.merge.splice(from, 1)[0];
+                    pdfToolState.merge.splice(to, 0, moved);
+                    renderMergeList();
+                });
+                list.appendChild(row);
+            });
+        }
+
+        async function runMergePdf() {
+            const items = pdfToolState.merge;
+            if (!items.length) return;
+            const btn = document.getElementById('btn-merge');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Unisco...';
+            try {
+                const out = await PDFLib.PDFDocument.create();
+                for (const item of items) {
+                    const donor = await PDFLib.PDFDocument.load(item.buffer.slice(0));
+                    const pages = await out.copyPages(donor, donor.getPageIndices());
+                    pages.forEach(p => out.addPage(p));
+                }
+                const bytes = await out.save();
+                downloadBlob(new Blob([bytes], { type: 'application/pdf' }), 'unito.pdf');
+            } catch (err) {
+                console.error(err);
+                alert('Errore: ' + (err.message || err));
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-object-group"></i> Unisci e scarica';
+            }
+        }
+
+        // ---- Dividi PDF ----
+        async function loadSplitPdf(file) {
+            const buf = await file.arrayBuffer();
+            const doc = await PDFLib.PDFDocument.load(buf.slice(0));
+            const pdfJs = await pdfjsLib.getDocument({ data: new Uint8Array(buf.slice(0)) }).promise;
+            const n = pdfJs.numPages;
+            const previews = {};
+            for (let i = 1; i <= n; i++) {
+                previews[i] = await renderPdfPagePreview(pdfJs, i, 1.4);
+            }
+            pdfToolState.split = { doc, buffer: buf.slice(0), name: file.name, pageCount: n, previews };
+            document.getElementById('split-range-controls').style.display = 'flex';
+            document.getElementById('splitFrom').value = 1;
+            document.getElementById('splitFrom').max = n;
+            document.getElementById('splitTo').value = n;
+            document.getElementById('splitTo').max = n;
+            const grid = document.getElementById('grid-split');
+            grid.innerHTML = '';
+            for (let i = 1; i <= n; i++) {
+                const card = document.createElement('div');
+                card.className = 'pdf-page-card';
+                card.style.cursor = 'default';
+                card.innerHTML = `
+                    <div class="pg-label"><span>Pag. ${i}</span></div>
+                    <div class="pg-img-wrap" style="height:200px;"><img alt="p" src="${previews[i]}"></div>
+                `;
+                grid.appendChild(card);
+            }
+        }
+
+        async function runSplitRange() {
+            const st = pdfToolState.split;
+            if (!st.doc) return;
+            let from = parseInt(document.getElementById('splitFrom').value) || 1;
+            let to = parseInt(document.getElementById('splitTo').value) || 1;
+            from = Math.max(1, Math.min(from, st.pageCount));
+            to = Math.max(from, Math.min(to, st.pageCount));
+            const indices = [];
+            for (let i = from; i <= to; i++) indices.push(i - 1);
+            const out = await PDFLib.PDFDocument.create();
+            const pages = await out.copyPages(st.doc, indices);
+            pages.forEach(p => out.addPage(p));
+            const bytes = await out.save();
+            const base = (st.name || 'documento').replace(/\.pdf$/i, '');
+            downloadBlob(new Blob([bytes], { type: 'application/pdf' }), `${base}_pag_${from}-${to}.pdf`);
+        }
+
+        async function runSplitAll() {
+            const st = pdfToolState.split;
+            if (!st.doc) return;
+            const base = (st.name || 'documento').replace(/\.pdf$/i, '');
+            for (let i = 0; i < st.pageCount; i++) {
+                const out = await PDFLib.PDFDocument.create();
+                const [page] = await out.copyPages(st.doc, [i]);
+                out.addPage(page);
+                const bytes = await out.save();
+                downloadBlob(new Blob([bytes], { type: 'application/pdf' }), `${base}_pag_${i + 1}.pdf`);
+                await new Promise(r => setTimeout(r, 200));
+            }
+        }
+
+        // ---- Comprimi PDF ----
+        async function loadCompressPdf(file) {
+            const buf = await file.arrayBuffer();
+            const pdfJs = await pdfjsLib.getDocument({ data: new Uint8Array(buf.slice(0)) }).promise;
+            const n = pdfJs.numPages;
+            const previews = {};
+            for (let i = 1; i <= Math.min(n, 6); i++) {
+                previews[i] = await renderPdfPagePreview(pdfJs, i, 1.2);
+            }
+            pdfToolState.compress = { buffer: buf.slice(0), name: file.name, pageCount: n, previews };
+            document.getElementById('compress-info').textContent = `File: ${file.name} · ${n} pagine · ${(buf.byteLength / 1024).toFixed(0)} KB`;
+            document.getElementById('compress-quality-row').style.display = 'flex';
+            document.getElementById('btn-compress').disabled = false;
+            const grid = document.getElementById('grid-compress');
+            grid.innerHTML = '';
+            Object.keys(previews).forEach(k => {
+                const card = document.createElement('div');
+                card.className = 'pdf-page-card';
+                card.style.cursor = 'default';
+                card.innerHTML = `
+                    <div class="pg-label"><span>Pag. ${k}</span></div>
+                    <div class="pg-img-wrap" style="height:180px;"><img alt="p" src="${previews[k]}"></div>
+                `;
+                grid.appendChild(card);
+            });
+            if (n > 6) {
+                const more = document.createElement('p');
+                more.style.cssText = 'grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:0.85rem;';
+                more.textContent = `… e altre ${n - 6} pagine`;
+                grid.appendChild(more);
+            }
+        }
+
+        async function runCompressPdf() {
+            const st = pdfToolState.compress;
+            if (!st.buffer) return;
+            const quality = parseFloat(document.getElementById('compressQuality').value) || 0.72;
+            const btn = document.getElementById('btn-compress');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Comprimo...';
+            try {
+                const pdfJs = await pdfjsLib.getDocument({ data: new Uint8Array(st.buffer.slice(0)) }).promise;
+                const out = await PDFLib.PDFDocument.create();
+                for (let p = 1; p <= pdfJs.numPages; p++) {
+                    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Pagina ${p}/${pdfJs.numPages}...`;
+                    const jpegBytes = await pdfPageToCompressedJpeg(pdfJs, p, quality, 1.5);
+                    const img = await out.embedJpg(jpegBytes);
+                    const page = out.addPage([img.width, img.height]);
+                    page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+                }
+                const bytes = await out.save();
+                const base = (st.name || 'documento').replace(/\.pdf$/i, '');
+                downloadBlob(new Blob([bytes], { type: 'application/pdf' }), base + '_compresso.pdf');
+                document.getElementById('compress-info').innerHTML =
+                    `Originale: ${(st.buffer.byteLength / 1024).toFixed(0)} KB → Compresso: <strong>${(bytes.byteLength / 1024).toFixed(0)} KB</strong>`;
+            } catch (err) {
+                console.error(err);
+                alert('Errore compressione: ' + (err.message || err));
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-file-zipper"></i> Comprimi e scarica';
+            }
+        }
+
+        // ---- Word → PDF ----
+        async function loadWordFile(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const result = await mammoth.convertToHtml({ arrayBuffer });
+            pdfToolState.word2pdf = { html: result.value || '<p>(documento vuoto)</p>', name: file.name };
+            const preview = document.getElementById('preview-word2pdf');
+            preview.style.display = 'block';
+            preview.innerHTML = pdfToolState.word2pdf.html;
+            document.getElementById('btn-word2pdf').disabled = false;
+        }
+
+        async function runWord2Pdf() {
+            const st = pdfToolState.word2pdf;
+            if (!st.html) return;
+            const btn = document.getElementById('btn-word2pdf');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Converto...';
+            try {
+                const wrap = document.createElement('div');
+                wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:800px;padding:40px;background:#fff;color:#000;font-family:Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.5;';
+                wrap.innerHTML = st.html;
+                document.body.appendChild(wrap);
+                const canvas = await html2canvas(wrap, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+                document.body.removeChild(wrap);
+                const imgData = canvas.toDataURL('image/jpeg', 0.92);
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+                const pageW = pdf.internal.pageSize.getWidth();
+                const pageH = pdf.internal.pageSize.getHeight();
+                const margin = 10;
+                const usableW = pageW - margin * 2;
+                const imgW = usableW;
+                const imgH = (canvas.height * imgW) / canvas.width;
+                let heightLeft = imgH;
+                let position = margin;
+                pdf.addImage(imgData, 'JPEG', margin, position, imgW, imgH);
+                heightLeft -= (pageH - margin * 2);
+                while (heightLeft > 0) {
+                    position = margin - (imgH - heightLeft);
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', margin, position, imgW, imgH);
+                    heightLeft -= (pageH - margin * 2);
+                }
+                const base = (st.name || 'documento').replace(/\.docx$/i, '');
+                pdf.save(base + '.pdf');
+            } catch (err) {
+                console.error(err);
+                alert('Errore conversione Word: ' + (err.message || err));
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Converti in PDF';
+            }
+        }
+
+        // ---- PDF → Word (testo) ----
+        async function runPdf2Word() {
+            const st = pdfToolState.pdf2word;
+            if (!st.buffer) return;
+            const btn = document.getElementById('btn-pdf2word');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Estraggo...';
+            try {
+                const pdfJs = await pdfjsLib.getDocument({ data: new Uint8Array(st.buffer.slice(0)) }).promise;
+                let text = '';
+                for (let i = 1; i <= pdfJs.numPages; i++) {
+                    const page = await pdfJs.getPage(i);
+                    const content = await page.getTextContent();
+                    const line = content.items.map(it => it.str).join(' ');
+                    text += line + '\n\n';
+                }
+                // HTML salvabile come .doc (Word apre HTML)
+                const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${st.name}</title></head><body><pre style="font-family:Calibri,Arial,sans-serif;font-size:12pt;white-space:pre-wrap;">${text.replace(/</g, '&lt;')}</pre></body></html>`;
+                const blob = new Blob([html], { type: 'application/msword' });
+                const base = (st.name || 'documento').replace(/\.pdf$/i, '');
+                downloadBlob(blob, base + '.doc');
+            } catch (err) {
+                console.error(err);
+                alert('Errore: ' + (err.message || err));
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-file-word"></i> Scarica .doc';
+            }
+        }
+
+        // ---- Excel → PDF ----
+        async function loadExcelFile(file) {
+            const buf = await file.arrayBuffer();
+            const wb = XLSX.read(buf, { type: 'array' });
+            const sheetName = wb.SheetNames[0];
+            const sheet = wb.Sheets[sheetName];
+            const html = XLSX.utils.sheet_to_html(sheet, { id: 'excel-table-preview' });
+            pdfToolState.excel2pdf = { html, name: file.name };
+            const preview = document.getElementById('preview-excel2pdf');
+            preview.style.display = 'block';
+            preview.innerHTML = html;
+            const table = preview.querySelector('table');
+            if (table) {
+                table.style.cssText = 'border-collapse:collapse;width:100%;font-size:12px;';
+                table.querySelectorAll('td,th').forEach(c => {
+                    c.style.cssText = 'border:1px solid #ccc;padding:4px 6px;';
+                });
+            }
+            document.getElementById('btn-excel2pdf').disabled = false;
+        }
+
+        async function runExcel2Pdf() {
+            const st = pdfToolState.excel2pdf;
+            if (!st.html) return;
+            const btn = document.getElementById('btn-excel2pdf');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Converto...';
+            try {
+                const wrap = document.createElement('div');
+                wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:1100px;padding:20px;background:#fff;color:#000;';
+                wrap.innerHTML = st.html;
+                const table = wrap.querySelector('table');
+                if (table) {
+                    table.style.cssText = 'border-collapse:collapse;width:100%;font-size:11px;font-family:Arial,sans-serif;';
+                    table.querySelectorAll('td,th').forEach(c => {
+                        c.style.cssText = 'border:1px solid #999;padding:3px 5px;';
+                    });
+                }
+                document.body.appendChild(wrap);
+                const canvas = await html2canvas(wrap, { scale: 2, backgroundColor: '#ffffff' });
+                document.body.removeChild(wrap);
+                const imgData = canvas.toDataURL('image/jpeg', 0.92);
+                const { jsPDF } = window.jspdf;
+                const landscape = canvas.width > canvas.height;
+                const pdf = new jsPDF({ orientation: landscape ? 'l' : 'p', unit: 'mm', format: 'a4' });
+                const pageW = pdf.internal.pageSize.getWidth();
+                const pageH = pdf.internal.pageSize.getHeight();
+                const margin = 8;
+                const usableW = pageW - margin * 2;
+                const imgW = usableW;
+                const imgH = (canvas.height * imgW) / canvas.width;
+                let heightLeft = imgH;
+                let position = margin;
+                pdf.addImage(imgData, 'JPEG', margin, position, imgW, imgH);
+                heightLeft -= (pageH - margin * 2);
+                while (heightLeft > 0) {
+                    position = margin - (imgH - heightLeft);
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', margin, position, imgW, imgH);
+                    heightLeft -= (pageH - margin * 2);
+                }
+                const base = (st.name || 'foglio').replace(/\.xlsx?$/i, '');
+                pdf.save(base + '.pdf');
+            } catch (err) {
+                console.error(err);
+                alert('Errore conversione Excel: ' + (err.message || err));
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Converti in PDF';
+            }
+        }
+
+        // ---- PDF → Excel ----
+        async function runPdf2Excel() {
+            const st = pdfToolState.pdf2excel;
+            if (!st.buffer) return;
+            const btn = document.getElementById('btn-pdf2excel');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Estraggo...';
+            try {
+                const pdfJs = await pdfjsLib.getDocument({ data: new Uint8Array(st.buffer.slice(0)) }).promise;
+                const rows = [];
+                for (let i = 1; i <= pdfJs.numPages; i++) {
+                    const page = await pdfJs.getPage(i);
+                    const content = await page.getTextContent();
+                    // Raggruppa per y approssimata
+                    const linesMap = {};
+                    content.items.forEach(it => {
+                        const y = Math.round(it.transform[5]);
+                        if (!linesMap[y]) linesMap[y] = [];
+                        linesMap[y].push(it.str);
+                    });
+                    const ys = Object.keys(linesMap).map(Number).sort((a, b) => b - a);
+                    ys.forEach(y => {
+                        const line = linesMap[y].join(' ').trim();
+                        if (line) rows.push([`Pag.${i}`, line]);
+                    });
+                    rows.push(['', '']);
+                }
+                const ws = XLSX.utils.aoa_to_sheet([['Pagina', 'Testo'], ...rows]);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Estratto');
+                const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                const base = (st.name || 'documento').replace(/\.pdf$/i, '');
+                downloadBlob(new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), base + '.xlsx');
+            } catch (err) {
+                console.error(err);
+                alert('Errore: ' + (err.message || err));
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-file-excel"></i> Scarica .xlsx';
+            }
         }
     </script>
 
