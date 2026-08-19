@@ -1516,8 +1516,13 @@
             { id: 9, name: "Busta paga", icon: "fa-money-bill-wave", desc: "Trascina file o clicca" },
             { id: 10, name: "Cedolino pensione", icon: "fa-receipt", desc: "Trascina file o clicca" },
             { id: 11, name: "Dichiarazione dei redditi", icon: "fa-file-invoice-dollar", desc: "Trascina file o clicca" },
-            { id: 12, name: "Documento personalizzato 1", icon: "fa-pen-to-square", desc: "Scrivi il nome e trascina i file", custom: true },
-            { id: 13, name: "Documento personalizzato 2", icon: "fa-pen-to-square", desc: "Scrivi il nome e trascina i file", custom: true }
+            { id: 12, name: "Modello 12 - Mandato irrevocabile all'incasso", icon: "fa-hand-holding-dollar", desc: "Trascina file o clicca" },
+            { id: 13, name: "Modulo affidamento Conto termico 3.0", icon: "fa-solar-panel", desc: "Trascina file o clicca" },
+            { id: 14, name: "Visura catastale", icon: "fa-map-location-dot", desc: "Trascina file o clicca" },
+            { id: 15, name: "Bolletta luce", icon: "fa-bolt", desc: "Trascina file o clicca" },
+            { id: 16, name: "Bolletta gas", icon: "fa-fire", desc: "Trascina file o clicca" },
+            { id: 17, name: "Documento personalizzato 1", icon: "fa-pen-to-square", desc: "Scrivi il nome e trascina i file", custom: true },
+            { id: 18, name: "Documento personalizzato 2", icon: "fa-pen-to-square", desc: "Scrivi il nome e trascina i file", custom: true }
         ];
 
         function getDocDisplayName(boxId) {
@@ -2871,15 +2876,4 @@
             const totFatturaVal = totaleImponibile + totIVAVal;
 
             document.getElementById('imp10').textContent = formatCurrency(imp10);
-            document.getElementById('iva10').textContent = formatCurrency(iva10Val);
-            document.getElementById('imp22').textContent = formatCurrency(imp22);
-            document.getElementById('iva22').textContent = formatCurrency(iva22Val);
-            document.getElementById('totImponibile').textContent = formatCurrency(totaleImponibile);
-            document.getElementById('totIVA').textContent = formatCurrency(totIVAVal);
-            document.getElementById('totFattura').textContent = formatCurrency(totFatturaVal);
-        }
-    </script>
-
-    </div><!-- /.page-wrap -->
-</body>
-</html>
+            document.getElementById
