@@ -1770,15 +1770,6 @@
                         </select>
                     </div>
                 </div>
-                <p id="archivePathPreview" style="margin-top:0.75rem; font-size:0.82rem; color:var(--text-muted); line-height:1.45;">
-                    Compila nome cliente e tipo prodotto per vedere il percorso.
-                </p>
-                <p style="margin-top:0.4rem; font-size:0.78rem; color:var(--text-muted);">
-                    <i class="fa-solid fa-info-circle"></i>
-                    <strong>02_DDC</strong> sempre: anagrafica, preventivo, IVA, Enea, CT, visura, bollette, modello 12, personalizzati.<br>
-                    <strong>09_FINANZIAMENTO</strong> solo se presente <em>Dati finanziamento</em> o <em>Modulo di consegna</em>
-                    (allora ci finiscono anche identità, tessera, buste paga / cedolino / redditi). Altrimenti identità e tessera vanno in <strong>02_DDC</strong>.
-                </p>
             </div>
 
             <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.25rem;">
@@ -1800,9 +1791,35 @@
         </div>
     </div>
 
+    <!-- MODALE AVVISO CARTELLA 02_CLIENTI -->
+    <div id="archiveFolderHintModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:1100; justify-content:center; align-items:center; padding:1rem;">
+        <div style="background:var(--card-bg); width:100%; max-width:460px; border-radius:12px; box-shadow:var(--shadow); padding:1.5rem 1.6rem; border:1px solid var(--border-color);">
+            <h3 style="font-size:1.15rem; margin-bottom:0.85rem; display:flex; align-items:center; gap:0.5rem; color:var(--text-main);">
+                <i class="fa-solid fa-folder-open" style="color:var(--accent-orange);"></i> Cartella di archiviazione
+            </h3>
+            <p style="font-size:0.98rem; color:var(--text-main); line-height:1.5; margin-bottom:1.15rem;">
+                Selezionare la cartella <strong>Preventivi/02_CLIENTI</strong> (penserò io a creare la cartella cliente).
+            </p>
+            <label style="display:flex; align-items:center; gap:0.55rem; font-size:0.9rem; color:var(--text-muted); cursor:pointer; user-select:none; margin-bottom:1.25rem;">
+                <input type="checkbox" id="archiveFolderHintDontShow" style="width:18px; height:18px; accent-color:var(--accent-orange); cursor:pointer;">
+                Non mostrare più
+            </label>
+            <div style="display:flex; justify-content:flex-end; gap:0.65rem;">
+                <button type="button" onclick="closeArchiveFolderHintModal(false)"
+                        style="padding:0.55rem 1rem; border:1px solid var(--border-color); border-radius:6px; background:transparent; color:var(--text-muted); cursor:pointer; font-weight:600;">
+                    Annulla
+                </button>
+                <button type="button" onclick="closeArchiveFolderHintModal(true)"
+                        style="padding:0.55rem 1.25rem; border:none; border-radius:6px; background:var(--accent-green); color:#fff; cursor:pointer; font-weight:700;">
+                    Ho capito
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODALE ANTEPRIMA / RIORDINA PAGINE DI UN BOX (compatta + rotazione) -->
     <div id="reorderModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:1001; justify-content:center; align-items:center; padding:0.75rem;">
-        <div style="background:var(--card-bg); width:100%; max-width:900px; max-height:90vh; border-radius:var(--radius); display:flex; flex-direction:column; overflow:hidden; box-shadow:var(--shadow);">
+        <div style="background:var(--card-bg); width:100%; max-width:1100px; max-height:92vh; border-radius:var(--radius); display:flex; flex-direction:column; overflow:hidden; box-shadow:var(--shadow);">
             <div style="padding:0.75rem 1rem; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
                 <h3 style="font-size:1.05rem; display:flex; align-items:center; gap:0.45rem;">
                     <i class="fa-solid fa-eye" style="color:var(--accent-orange);"></i>
@@ -2203,12 +2220,13 @@
             updateDocBoxUI(boxId);
             checkSaveButtonState();
 
-            // Se c'è un solo file nel box (immagine o PDF), apri subito l'anteprima grande
-            // così si può leggere e ruotare prima di salvare
-            if (autoPreview && clientDocs[boxId].length === 1) {
-                const f = clientDocs[boxId][0];
-                if (f.type.startsWith('image/') || f.type === 'application/pdf') {
-                    // Piccolo delay per lasciare aggiornare la UI del box
+            // Ogni volta che si aggiungono file: apri anteprima di TUTTE le pagine del box
+            // (ruota, riordina, elimina) — non solo al primo file
+            if (autoPreview && clientDocs[boxId].length > 0) {
+                const hasPreviewable = clientDocs[boxId].some(
+                    f => f.type.startsWith('image/') || f.type === 'application/pdf'
+                );
+                if (hasPreviewable) {
                     setTimeout(() => openReorderModal(boxId), 180);
                 }
             }
@@ -2391,7 +2409,54 @@
             return await parentHandle.getDirectoryHandle(safeFileName(name) || 'cartella', { create: true });
         }
 
+        const ARCHIVE_HINT_LS_KEY = 'archiveFolderHintDontShow';
+
+        function showArchiveFolderHintModal() {
+            const modal = document.getElementById('archiveFolderHintModal');
+            const cb = document.getElementById('archiveFolderHintDontShow');
+            if (cb) cb.checked = false;
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeArchiveFolderHintModal(proceed) {
+            const modal = document.getElementById('archiveFolderHintModal');
+            const cb = document.getElementById('archiveFolderHintDontShow');
+            if (cb && cb.checked) {
+                try { localStorage.setItem(ARCHIVE_HINT_LS_KEY, 'true'); } catch (e) { /* ignore */ }
+            }
+            if (modal) modal.style.display = 'none';
+            if (proceed) {
+                // Piccolo delay così la modale si chiude prima del file picker del browser
+                setTimeout(() => { saveAllDocsToFolderExecute(); }, 80);
+            }
+        }
+
         async function saveAllDocsToFolder() {
+            // Validazione campi prima del messaggio (evita popup inutili)
+            const clientRaw = (document.getElementById('archiveClientName')?.value || '').trim();
+            const productRaw = (document.getElementById('archiveProductType')?.value || '').trim();
+            if (!clientRaw) {
+                alert('Inserisci il nome del cliente prima di salvare.');
+                document.getElementById('archiveClientName')?.focus();
+                return;
+            }
+            if (!productRaw) {
+                alert('Seleziona il tipo prodotto prima di salvare.');
+                document.getElementById('archiveProductType')?.focus();
+                return;
+            }
+
+            let hideHint = false;
+            try { hideHint = localStorage.getItem(ARCHIVE_HINT_LS_KEY) === 'true'; } catch (e) { /* ignore */ }
+
+            if (!hideHint) {
+                showArchiveFolderHintModal();
+                return;
+            }
+            await saveAllDocsToFolderExecute();
+        }
+
+        async function saveAllDocsToFolderExecute() {
             const compress = document.getElementById('compressPdfOption').checked;
             const btn = document.getElementById('saveDocsBtn');
             const hint = document.getElementById('saveFolderHint');
@@ -2529,8 +2594,8 @@
             const grid = document.getElementById('reorderPagesGrid');
             grid.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:2rem;">Caricamento anteprima...</p>';
 
-            // Scale sufficiente per leggere, ma compatto
-            const previewScale = 1.25;
+            // Scale alto per anteprima leggibile
+            const previewScale = 1.85;
 
             let itemId = 0;
             for (const file of files) {
@@ -2584,13 +2649,24 @@
             renderReorderGrid();
         }
 
+        function applyReorderImgRotation(imgEl, rot) {
+            const r = ((rot || 0) % 360 + 360) % 360;
+            if (r === 90 || r === 270) {
+                imgEl.style.transform = `rotate(${r}deg) scale(0.78)`;
+            } else if (r === 180) {
+                imgEl.style.transform = 'rotate(180deg)';
+            } else {
+                imgEl.style.transform = '';
+            }
+        }
+
         function renderReorderGrid() {
             const grid = document.getElementById('reorderPagesGrid');
             grid.innerHTML = '';
             const isSingle = reorderItems.length === 1;
             const isFew = reorderItems.length <= 2;
 
-            // Layout compatto: 1 pagina centrata, poche un po' più larghe, molte griglia
+            // Anteprime grandi e leggibili
             if (isSingle) {
                 grid.style.display = 'flex';
                 grid.style.flexDirection = 'column';
@@ -2599,17 +2675,17 @@
                 grid.style.gridTemplateColumns = '';
             } else if (isFew) {
                 grid.style.display = 'grid';
-                grid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(240px, 1fr))';
+                grid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(320px, 1fr))';
             } else {
                 grid.style.display = 'grid';
-                grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(160px, 1fr))';
+                grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
             }
 
             const hint = document.getElementById('reorderModalHint');
             if (hint) {
                 hint.textContent = isSingle
                     ? 'Controlla l’orientamento e usa ±90° per ruotare, poi conferma.'
-                    : 'Ruota le pagine e trascina le card per cambiare l’ordine, poi conferma.';
+                    : 'Ogni pagina è in anteprima: ruota, elimina o trascina per riordinare, poi conferma.';
             }
 
             reorderItems.forEach((item, index) => {
@@ -2619,31 +2695,34 @@
                 div.dataset.index = index;
 
                 if (isSingle) {
-                    div.style.cssText = 'max-width:min(520px, 92vw); width:100%; background:var(--card-bg); border:2px solid var(--border-color); border-radius:8px; padding:0.55rem; display:flex; flex-direction:column; align-items:center; gap:0.45rem;';
+                    div.style.cssText = 'max-width:min(640px, 94vw); width:100%; background:var(--card-bg); border:2px solid var(--border-color); border-radius:8px; padding:0.65rem; display:flex; flex-direction:column; align-items:center; gap:0.5rem;';
+                } else {
+                    div.style.cssText = 'background:var(--card-bg); border:2px solid var(--border-color); border-radius:8px; padding:0.55rem; display:flex; flex-direction:column; align-items:center; gap:0.45rem;';
                 }
 
-                const imgStyle = isSingle
-                    ? `max-width:100%; max-height:min(52vh, 480px); width:auto; height:auto; object-fit:contain; border-radius:4px; border:1px solid var(--border-color); transform:rotate(${item.rotation}deg); transition:transform 0.2s; background:#fff;`
-                    : `width:100%; height:auto; border-radius:4px; border:1px solid var(--border-color); transform:rotate(${item.rotation}deg); transition:transform 0.2s; background:#fff;`;
+                const imgWrapH = isSingle ? 'min(58vh, 560px)' : '340px';
 
                 div.innerHTML = `
-                    <div style="font-size:0.8rem; font-weight:700; color:var(--accent-orange); display:flex; align-items:center; gap:0.4rem; width:100%; justify-content:space-between;">
+                    <div style="font-size:0.85rem; font-weight:700; color:var(--accent-orange); display:flex; align-items:center; gap:0.4rem; width:100%; justify-content:space-between;">
                         <span>Pag. ${index + 1}${item.rotation ? ` · ${item.rotation}°` : ''}</span>
-                        ${!isSingle ? '<i class="fa-solid fa-grip-vertical" style="color:var(--text-muted); font-size:0.8rem;"></i>' : ''}
+                        ${!isSingle ? '<i class="fa-solid fa-grip-vertical" style="color:var(--text-muted); font-size:0.85rem;"></i>' : ''}
                     </div>
-                    <img src="${item.dataUrl}" alt="Pagina ${index + 1}" style="${imgStyle}">
+                    <div style="width:100%; height:${imgWrapH}; overflow:hidden; border-radius:6px; border:1px solid var(--border-color); background:#f0f2f4; display:flex; align-items:center; justify-content:center;">
+                        <img src="${item.dataUrl}" alt="Pagina ${index + 1}" style="max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; background:#fff; transition:transform 0.2s; transform-origin:center center;">
+                    </div>
                     <div style="display:flex; gap:0.35rem; width:100%; justify-content:center; flex-wrap:wrap;">
-                        <button type="button" class="btn-box-action" style="flex:1; min-width:70px; justify-content:center; padding:0.4rem 0.45rem; font-size:0.8rem;" onclick="event.stopPropagation(); rotateReorderItem(${index}, -90)">
+                        <button type="button" class="btn-box-action" style="flex:1; min-width:70px; justify-content:center; padding:0.45rem 0.5rem; font-size:0.85rem;" onclick="event.stopPropagation(); rotateReorderItem(${index}, -90)">
                             <i class="fa-solid fa-rotate-left"></i> −90°
                         </button>
-                        <button type="button" class="btn-box-action" style="flex:1; min-width:70px; justify-content:center; padding:0.4rem 0.45rem; font-size:0.8rem;" onclick="event.stopPropagation(); rotateReorderItem(${index}, 90)">
+                        <button type="button" class="btn-box-action" style="flex:1; min-width:70px; justify-content:center; padding:0.45rem 0.5rem; font-size:0.85rem;" onclick="event.stopPropagation(); rotateReorderItem(${index}, 90)">
                             <i class="fa-solid fa-rotate-right"></i> +90°
                         </button>
-                        <button type="button" class="btn-box-action" style="flex:1; min-width:70px; justify-content:center; padding:0.4rem 0.45rem; font-size:0.8rem; color:#e53e3e; border-color:#e53e3e;" onclick="event.stopPropagation(); deleteReorderItem(${index})" title="Elimina pagina">
+                        <button type="button" class="btn-box-action" style="flex:1; min-width:70px; justify-content:center; padding:0.45rem 0.5rem; font-size:0.85rem; color:#e53e3e; border-color:#e53e3e;" onclick="event.stopPropagation(); deleteReorderItem(${index})" title="Elimina pagina">
                             <i class="fa-solid fa-trash-can"></i> Elimina
                         </button>
                     </div>
                 `;
+                applyReorderImgRotation(div.querySelector('img'), item.rotation);
 
                 if (!isSingle) {
                     div.addEventListener('dragstart', (e) => {
@@ -2762,1637 +2841,4 @@
                             buffer = await imageToCompressedJpegBytes(buffer, 0.92);
                         }
                         const embedded = await pdfDoc.embedJpg(buffer);
-                        const page = pdfDoc.addPage([embedded.width, embedded.height]);
-                        page.drawImage(embedded, { x: 0, y: 0, width: embedded.width, height: embedded.height });
-                    } else if (item.sourceType === 'pdf-page') {
-                        // slice(0) obbligatorio: pdf-lib può detachare il buffer
-                        const donor = await PDFLib.PDFDocument.load(item.pdfBuffer.slice(0));
-                        const [copied] = await pdfDoc.copyPages(donor, [item.pageIndex]);
-                        if (item.rotation) {
-                            const current = copied.getRotation().angle;
-                            copied.setRotation(PDFLib.degrees((current + item.rotation) % 360));
-                        }
-                        pdfDoc.addPage(copied);
-                    }
-                }
-
-                if (pdfDoc.getPageCount() === 0) {
-                    throw new Error('Nessuna pagina generata');
-                }
-
-                const pdfBytes = await pdfDoc.save();
-                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-                const newFile = new File([blob], `${safeFileName(getDocDisplayName(reorderBoxId))} riordinato.pdf`, { type: 'application/pdf' });
-
-                clientDocs[reorderBoxId] = [newFile];
-                updateDocBoxUI(reorderBoxId);
-                checkSaveButtonState();
-                closeReorderModal();
-            } catch (err) {
-                console.error('Errore conferma anteprima/rotazione:', err);
-                alert('Errore durante l\'applicazione delle rotazioni: ' + (err.message || err));
-                resetReorderConfirmBtn();
-            }
-        }
-
-        // --- GESTIONE SMISTAMENTO MULTI-PAGINA VELOCE ---
-        let loadedMasterPdfDoc = null;
-        let masterPdfArrayBuffer = null;
-        let masterFileName = "";
-        let masterFileNames = []; // elenco file caricati (anche multipli)
-        let totalPdfPages = 0;
-        let pdfJsDocInstance = null;
-        // pageAssignments: chiave = numero pagina (1-based nel doc unificato), valore = boxId
-        let pageAssignments = {};
-        // pageRotations: chiave = numero pagina, valore = gradi
-        let pageRotations = {};
-        // Ordine di visualizzazione/smistamento (numeri pagina 1-based)
-        let pageOrder = [];
-        // Cache anteprime: pageNum -> dataURL
-        let pagePreviewCache = {};
-        let multiDragSrcPage = null;
-
-        function handleMultiPDFSelect(event) {
-            const file = event.target.files[0];
-            if (file) processMasterPdfFile(file);
-        }
-
-        function handleDropMultiPDF(e) {
-            e.preventDefault();
-            e.currentTarget.classList.remove('dragover');
-            const file = e.dataTransfer.files[0];
-            if (file) processMasterPdfFile(file);
-        }
-
-        function updateMultiPdfInfoBar() {
-            const info = document.getElementById('multiPdfInfo');
-            if (!info) return;
-            const names = masterFileNames.length
-                ? masterFileNames.map(n => `<strong>${n}</strong>`).join(', ')
-                : (masterFileName ? `<strong>${masterFileName}</strong>` : '—');
-            info.innerHTML = `File: ${names} &nbsp;·&nbsp; Totale pagine: <strong>${totalPdfPages}</strong>`;
-        }
-
-        function handleAddMorePdfSelect(event) {
-            const files = Array.from(event.target.files || []);
-            event.target.value = '';
-            if (!files.length) return;
-            addMorePdfFiles(files);
-        }
-
-        async function addMorePdfFiles(files) {
-            if (!loadedMasterPdfDoc) {
-                // Se la modale non è ancora inizializzata, apri col primo PDF
-                const first = files.find(f => f.type === 'application/pdf' || /\.pdf$/i.test(f.name));
-                if (first) await processMasterPdfFile(first);
-                const rest = files.filter(f => f !== first);
-                if (rest.length) await addMorePdfFiles(rest);
-                return;
-            }
-
-            const pdfFiles = files.filter(f => f.type === 'application/pdf' || /\.pdf$/i.test(f.name));
-            if (!pdfFiles.length) {
-                alert('Seleziona uno o più file PDF.');
-                return;
-            }
-
-            const btn = document.getElementById('addMorePdfBtn');
-            const prevLabel = btn ? btn.innerHTML : '';
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Aggiungo...';
-            }
-
-            try {
-                for (const file of pdfFiles) {
-                    await appendPdfToMaster(file);
-                }
-                // Aggiorna limiti intervallo
-                const rangeFrom = document.getElementById('rangeFrom');
-                const rangeTo = document.getElementById('rangeTo');
-                if (rangeFrom) rangeFrom.max = totalPdfPages;
-                if (rangeTo) {
-                    rangeTo.max = totalPdfPages;
-                    if (parseInt(rangeTo.value) > totalPdfPages) rangeTo.value = totalPdfPages;
-                }
-                updateMultiPdfInfoBar();
-                renderOrderedPdfThumbnails();
-                updateAssignmentSummary();
-            } catch (err) {
-                console.error(err);
-                alert('Errore durante l\'aggiunta del PDF: ' + (err.message || err));
-            } finally {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = prevLabel || '<i class="fa-solid fa-file-circle-plus"></i> Aggiungi altro PDF';
-                }
-            }
-        }
-
-        async function appendPdfToMaster(file) {
-            const arrayBuffer = await file.arrayBuffer();
-            const safeBuf = arrayBuffer.slice(0);
-            const donor = await PDFLib.PDFDocument.load(safeBuf);
-            const n = donor.getPageCount();
-            if (n < 1) return;
-
-            const startPage = loadedMasterPdfDoc.getPageCount() + 1;
-            const copied = await loadedMasterPdfDoc.copyPages(donor, donor.getPageIndices());
-            copied.forEach(p => loadedMasterPdfDoc.addPage(p));
-
-            // Anteprime dalle pagine del nuovo file (pdf.js)
-            const pdfJsDoc = await pdfjsLib.getDocument({ data: new Uint8Array(safeBuf.slice(0)) }).promise;
-            for (let i = 1; i <= n; i++) {
-                const pageNum = startPage + i - 1;
-                try {
-                    const page = await pdfJsDoc.getPage(i);
-                    const viewport = page.getViewport({ scale: 1.85 });
-                    const canvas = document.createElement('canvas');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-                    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-                    pagePreviewCache[pageNum] = canvas.toDataURL('image/jpeg', 0.9);
-                } catch (e) {
-                    console.error(`Errore preview nuova pagina ${pageNum}`, e);
-                    pagePreviewCache[pageNum] = '';
-                }
-                pageOrder.push(pageNum);
-            }
-
-            totalPdfPages = loadedMasterPdfDoc.getPageCount();
-            masterFileNames.push(file.name);
-            if (!masterFileName) masterFileName = file.name;
-        }
-
-        // --- IMPORT UNIFICATO ---
-        function handleUnifiedSelect(event) {
-            const files = event.target.files;
-            if (files && files.length) routeImportedFiles(Array.from(files));
-            event.target.value = '';
-        }
-
-        function handleUnifiedDrop(e) {
-            e.preventDefault();
-            e.currentTarget.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            if (files && files.length) routeImportedFiles(Array.from(files));
-        }
-
-        async function routeImportedFiles(files) {
-            // Se un solo PDF multi-pagina → smistamento
-            if (files.length === 1 && files[0].type === 'application/pdf') {
-                try {
-                    const buf = await files[0].arrayBuffer();
-                    const pdf = await PDFLib.PDFDocument.load(buf);
-                    if (pdf.getPageCount() > 1) {
-                        processMasterPdfFile(files[0]);
-                        return;
-                    }
-                } catch (err) {
-                    console.warn('PDF check fail, tratto come file singolo', err);
-                }
-            }
-
-            // Altrimenti: chiedi in quale box mettere i file
-            showQuickAssignDialog(files);
-        }
-
-        function showQuickAssignDialog(files) {
-            const existing = document.getElementById('quickAssignOverlay');
-            if (existing) existing.remove();
-
-            const overlay = document.createElement('div');
-            overlay.id = 'quickAssignOverlay';
-            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1100;display:flex;align-items:center;justify-content:center;padding:1rem;';
-            overlay.innerHTML = `
-                <div style="background:var(--card-bg);border-radius:12px;padding:1.5rem;max-width:420px;width:100%;box-shadow:var(--shadow);">
-                    <h3 style="margin-bottom:0.5rem;font-size:1.1rem;"><i class="fa-solid fa-inbox" style="color:var(--accent-orange);"></i> Assegna ai box</h3>
-                    <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:1rem;">
-                        ${files.length} file selezionato/i. Scegli il box di destinazione:
-                    </p>
-                    <select id="quickAssignSelect" style="width:100%;padding:0.65rem;font-size:0.95rem;margin-bottom:1rem;border:1px solid var(--border-color);border-radius:6px;background:var(--input-bg);color:var(--text-main);">
-                        ${docNames.map(d => `<option value="${d.id}">${getDocDisplayName(d.id)}</option>`).join('')}
-                    </select>
-                    <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
-                        <button type="button" id="quickAssignCancel" style="padding:0.55rem 1rem;border:1px solid var(--border-color);border-radius:6px;background:transparent;color:var(--text-muted);cursor:pointer;">Annulla</button>
-                        <button type="button" id="quickAssignOk" style="padding:0.55rem 1.2rem;border:none;border-radius:6px;background:var(--accent-green);color:#fff;font-weight:700;cursor:pointer;">Assegna</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(overlay);
-
-            document.getElementById('quickAssignCancel').onclick = () => overlay.remove();
-            overlay.addEventListener('click', (ev) => { if (ev.target === overlay) overlay.remove(); });
-            document.getElementById('quickAssignOk').onclick = () => {
-                const boxId = parseInt(document.getElementById('quickAssignSelect').value);
-                processFiles(files, boxId);
-                overlay.remove();
-                const archiveCard = document.getElementById('archive-card');
-                if (archiveCard && !archiveCard.classList.contains('active')) {
-                    archiveCard.classList.add('active');
-                }
-                archiveCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            };
-        }
-
-        async function processMasterPdfFile(file) {
-            masterFileName = file.name;
-            masterFileNames = [file.name];
-            masterPdfArrayBuffer = await file.arrayBuffer();
-            pageAssignments = {};
-            pageRotations = {};
-            pagePreviewCache = {};
-            pageOrder = [];
-            
-            try {
-                loadedMasterPdfDoc = await PDFLib.PDFDocument.load(masterPdfArrayBuffer);
-                totalPdfPages = loadedMasterPdfDoc.getPageCount();
-                pageOrder = Array.from({ length: totalPdfPages }, (_, i) => i + 1);
-
-                const uint8Array = new Uint8Array(masterPdfArrayBuffer);
-                pdfJsDocInstance = await pdfjsLib.getDocument({ data: uint8Array }).promise;
-                
-                document.getElementById('multiPdfModal').style.display = 'flex';
-                updateMultiPdfInfoBar();
-
-                const rangeSelect = document.getElementById('rangeTarget');
-                rangeSelect.innerHTML = '<option value="">-- Seleziona --</option>' + 
-                    getAssignableDocs().map(d => `<option value="${d.id}">${getDocDisplayName(d.id)}</option>`).join('');
-                document.getElementById('rangeFrom').value = 1;
-                document.getElementById('rangeTo').value = Math.min(2, totalPdfPages);
-                document.getElementById('rangeFrom').max = totalPdfPages;
-                document.getElementById('rangeTo').max = totalPdfPages;
-
-                await buildPagePreviewCache();
-                renderOrderedPdfThumbnails();
-                updateAssignmentSummary();
-            } catch (err) {
-                alert("Errore nella lettura del file PDF.");
-                console.error(err);
-            }
-        }
-
-        async function buildPagePreviewCache() {
-            pagePreviewCache = {};
-            for (let i = 1; i <= totalPdfPages; i++) {
-                try {
-                    const page = await pdfJsDocInstance.getPage(i);
-                    const viewport = page.getViewport({ scale: 1.85 });
-                    const canvas = document.createElement('canvas');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-                    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-                    pagePreviewCache[i] = canvas.toDataURL('image/jpeg', 0.9);
-                } catch (e) {
-                    console.error(`Errore preview pagina ${i}`, e);
-                    pagePreviewCache[i] = '';
-                }
-            }
-        }
-
-        // Opzioni box per smistamento: esclusi i documenti personalizzati
-        function getAssignableDocs() {
-            return docNames.filter(d => !d.custom);
-        }
-
-        function getBoxOptionsHtml(selectedId) {
-            let html = '<option value="">— Non assegnata —</option>';
-            getAssignableDocs().forEach(d => {
-                const sel = (String(selectedId) === String(d.id)) ? ' selected' : '';
-                html += `<option value="${d.id}"${sel}>${getDocDisplayName(d.id)}</option>`;
-            });
-            return html;
-        }
-
-        // Applica rotazione all'anteprima senza far uscire l'immagine dal riquadro
-        function applyPreviewRotation(imgEl, rot) {
-            const r = ((rot || 0) % 360 + 360) % 360;
-            if (r === 90 || r === 270) {
-                // Scala in modo che il foglio ruotato resti dentro il contenitore alto
-                imgEl.style.transform = `rotate(${r}deg) scale(0.78)`;
-            } else if (r === 180) {
-                imgEl.style.transform = `rotate(180deg)`;
-            } else {
-                imgEl.style.transform = '';
-            }
-        }
-
-        function renderOrderedPdfThumbnails() {
-            const grid = document.getElementById('pdfThumbnailsGrid');
-            grid.innerHTML = '';
-
-            pageOrder.forEach((origPage, displayIdx) => {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'page-card';
-                wrapper.draggable = true;
-                wrapper.dataset.page = origPage;
-                wrapper.style.cssText = "background:#ffffff; border:2px solid var(--border-color); border-radius:8px; padding:0.6rem; box-shadow: 0 2px 6px rgba(0,0,0,0.05); display:flex; flex-direction:column; gap:0.45rem; transition: border-color 0.2s, opacity 0.15s; cursor:grab; overflow:hidden;";
-                
-                if (pageAssignments[origPage]) {
-                    wrapper.style.borderColor = 'var(--accent-green)';
-                }
-
-                const label = document.createElement('div');
-                label.style.cssText = "font-size:0.85rem; font-weight:700; color:var(--accent-orange); display:flex; justify-content:space-between; align-items:center; flex-shrink:0;";
-                label.innerHTML = `
-                    <span><i class="fa-solid fa-grip-vertical" style="color:var(--text-muted); margin-right:0.25rem;"></i> #${displayIdx + 1}</span>
-                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:500;">orig. ${origPage}</span>
-                `;
-                wrapper.appendChild(label);
-
-                // Contenitore alto con overflow:hidden: leggibile, rotazione non copre i controlli
-                const imgWrap = document.createElement('div');
-                imgWrap.style.cssText = "width:100%; height:420px; overflow:hidden; border:1px solid var(--border-color); border-radius:6px; background:#f0f2f4; display:flex; align-items:center; justify-content:center; flex-shrink:0;";
-
-                const img = document.createElement('img');
-                img.src = pagePreviewCache[origPage] || '';
-                img.alt = `Pagina ${origPage}`;
-                img.draggable = false;
-                img.style.cssText = "max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; background:white; transition: transform 0.25s; pointer-events:none; transform-origin:center center; box-shadow:0 1px 4px rgba(0,0,0,0.08);";
-                applyPreviewRotation(img, pageRotations[origPage] || 0);
-                imgWrap.appendChild(img);
-                wrapper.appendChild(imgWrap);
-
-                const actionsRow = document.createElement('div');
-                actionsRow.style.cssText = "display:flex; gap:0.35rem; align-items:center; flex-wrap:wrap; position:relative; z-index:2; background:#ffffff; flex-shrink:0; padding-top:0.15rem;";
-
-                const rotBtnL = document.createElement('button');
-                rotBtnL.type = 'button';
-                rotBtnL.title = 'Ruota −90°';
-                rotBtnL.innerHTML = '<i class="fa-solid fa-rotate-left"></i>';
-                rotBtnL.style.cssText = "flex-shrink:0; width:36px; height:34px; border:1px solid var(--border-color); border-radius:5px; background:#fff; color:var(--accent-orange); cursor:pointer; font-size:0.95rem;";
-                rotBtnL.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    pageRotations[origPage] = ((pageRotations[origPage] || 0) - 90 + 360) % 360;
-                    applyPreviewRotation(img, pageRotations[origPage]);
-                    rotBadge.textContent = pageRotations[origPage] ? `${pageRotations[origPage]}°` : '';
-                });
-                actionsRow.appendChild(rotBtnL);
-
-                const rotBtn = document.createElement('button');
-                rotBtn.type = 'button';
-                rotBtn.title = 'Ruota +90°';
-                rotBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i>';
-                rotBtn.style.cssText = "flex-shrink:0; width:36px; height:34px; border:1px solid var(--border-color); border-radius:5px; background:#fff; color:var(--accent-orange); cursor:pointer; font-size:0.95rem;";
-                rotBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    pageRotations[origPage] = ((pageRotations[origPage] || 0) + 90) % 360;
-                    applyPreviewRotation(img, pageRotations[origPage]);
-                    rotBadge.textContent = pageRotations[origPage] ? `${pageRotations[origPage]}°` : '';
-                });
-                actionsRow.appendChild(rotBtn);
-
-                const rotBadge = document.createElement('span');
-                rotBadge.style.cssText = "font-size:0.75rem; color:var(--text-muted); min-width:28px; font-weight:600;";
-                if (pageRotations[origPage]) rotBadge.textContent = `${pageRotations[origPage]}°`;
-                actionsRow.appendChild(rotBadge);
-
-                const delBtn = document.createElement('button');
-                delBtn.type = 'button';
-                delBtn.title = 'Elimina questa pagina';
-                delBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
-                delBtn.style.cssText = "flex-shrink:0; width:36px; height:34px; border:1px solid #e53e3e; border-radius:5px; background:#fff; color:#e53e3e; cursor:pointer; font-size:0.9rem;";
-                delBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    deleteMultiPdfPage(origPage);
-                });
-                actionsRow.appendChild(delBtn);
-
-                const select = document.createElement('select');
-                select.className = 'page-assign-select';
-                select.dataset.page = origPage;
-                select.style.cssText = "flex:1; min-width:160px; padding:0.45rem 0.5rem; font-size:1rem; font-weight:500; border:1px solid var(--border-color); border-radius:5px; background:#fff; color:#212529; line-height:1.3;";
-                select.innerHTML = getBoxOptionsHtml(pageAssignments[origPage] || '');
-                select.addEventListener('change', function() {
-                    const pageNum = parseInt(this.dataset.page);
-                    const val = this.value;
-                    if (val) {
-                        pageAssignments[pageNum] = val;
-                        wrapper.style.borderColor = 'var(--accent-green)';
-                    } else {
-                        delete pageAssignments[pageNum];
-                        wrapper.style.borderColor = 'var(--border-color)';
-                    }
-                    updateAssignmentSummary();
-                });
-                select.addEventListener('mousedown', (e) => e.stopPropagation());
-                actionsRow.appendChild(select);
-                wrapper.appendChild(actionsRow);
-
-                // Drag & drop riordino
-                wrapper.addEventListener('dragstart', (e) => {
-                    multiDragSrcPage = origPage;
-                    wrapper.classList.add('dragging');
-                    wrapper.style.opacity = '0.45';
-                    e.dataTransfer.effectAllowed = 'move';
-                    e.dataTransfer.setData('text/plain', String(origPage));
-                });
-                wrapper.addEventListener('dragend', () => {
-                    wrapper.classList.remove('dragging');
-                    wrapper.style.opacity = '1';
-                    multiDragSrcPage = null;
-                    document.querySelectorAll('.page-card').forEach(c => {
-                        c.style.outline = '';
-                    });
-                });
-                wrapper.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
-                    wrapper.style.outline = '2px dashed var(--accent-cyan)';
-                });
-                wrapper.addEventListener('dragleave', () => {
-                    wrapper.style.outline = '';
-                });
-                wrapper.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    wrapper.style.outline = '';
-                    const srcPage = multiDragSrcPage;
-                    const targetPage = origPage;
-                    if (srcPage == null || srcPage === targetPage) return;
-
-                    const fromIdx = pageOrder.indexOf(srcPage);
-                    const toIdx = pageOrder.indexOf(targetPage);
-                    if (fromIdx < 0 || toIdx < 0) return;
-
-                    pageOrder.splice(fromIdx, 1);
-                    pageOrder.splice(toIdx, 0, srcPage);
-                    renderOrderedPdfThumbnails();
-                    updateAssignmentSummary();
-                });
-
-                grid.appendChild(wrapper);
-            });
-        }
-
-        function applyRangeAssignment() {
-            const from = parseInt(document.getElementById('rangeFrom').value) || 1;
-            const to = parseInt(document.getElementById('rangeTo').value) || 1;
-            const target = document.getElementById('rangeTarget').value;
-
-            if (!target) {
-                alert("Seleziona un box di destinazione.");
-                return;
-            }
-            if (from < 1 || from > to) {
-                alert('Intervallo non valido: "Da" deve essere ≤ "A".');
-                return;
-            }
-
-            // Assegna solo pagine ancora presenti (numeri originali)
-            let assigned = 0;
-            for (let p = from; p <= to; p++) {
-                if (!pageOrder.includes(p)) continue;
-                pageAssignments[p] = target;
-                assigned++;
-                const select = document.querySelector(`.page-assign-select[data-page="${p}"]`);
-                if (select) {
-                    select.value = target;
-                    const card = select.closest('.page-card');
-                    if (card) card.style.borderColor = 'var(--accent-green)';
-                }
-            }
-            if (assigned === 0) {
-                alert('Nessuna pagina nell’intervallo (potrebbero essere state eliminate). Usa i numeri “orig.” sulle card.');
-                return;
-            }
-            updateAssignmentSummary();
-        }
-
-        function deleteMultiPdfPage(pageNum) {
-            if (pageOrder.length <= 1) {
-                if (!confirm('È l’ultima pagina. Eliminandola chiuderai lo smistamento. Continuare?')) return;
-                closeMultiPdfModal();
-                return;
-            }
-            const idx = pageOrder.indexOf(pageNum);
-            if (idx < 0) return;
-            pageOrder.splice(idx, 1);
-            delete pageAssignments[pageNum];
-            delete pageRotations[pageNum];
-            delete pagePreviewCache[pageNum];
-            renderOrderedPdfThumbnails();
-            updateAssignmentSummary();
-        }
-
-        function clearAllAssignments() {
-            pageAssignments = {};
-            document.querySelectorAll('.page-assign-select').forEach(sel => {
-                sel.value = '';
-                const card = sel.closest('.page-card');
-                if (card) card.style.borderColor = 'var(--border-color)';
-            });
-            updateAssignmentSummary();
-        }
-
-        function updateAssignmentSummary() {
-            const summary = document.getElementById('assignmentSummary');
-            const counter = document.getElementById('assignCounter');
-            // Rispetta l'ordine di trascinamento (solo pagine ancora presenti)
-            const remaining = pageOrder.length;
-            const assignedPages = pageOrder.filter(p => pageAssignments[p]);
-            const count = assignedPages.length;
-
-            counter.textContent = `${count} / ${remaining} pagine assegnate`;
-            counter.style.color = count === totalPdfPages ? 'var(--accent-green)' : (count > 0 ? 'var(--accent-orange)' : 'var(--text-muted)');
-
-            if (count === 0) {
-                summary.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem;">Nessuna pagina assegnata. Usa i menu sotto le pagine o lo strumento intervallo.</p>';
-                return;
-            }
-
-            // Raggruppa per box (ordine = ordine di trascinamento)
-            const byBox = {};
-            assignedPages.forEach(p => {
-                const boxId = pageAssignments[p];
-                if (!byBox[boxId]) byBox[boxId] = [];
-                byBox[boxId].push(p);
-            });
-
-            let html = '';
-            Object.keys(byBox).forEach(boxId => {
-                const doc = docNames.find(d => d.id == boxId);
-                const pages = byBox[boxId];
-                // Comprimi in intervalli leggibili: 1,2,3 → 1-3
-                const ranges = compressPageList(pages);
-                html += `
-                    <div style="background:var(--card-inner-bg); border:1px solid var(--border-color); border-radius:6px; padding:0.6rem 0.75rem; display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
-                        <div>
-                            <strong style="font-size:0.88rem;"><i class="fa-solid ${doc ? doc.icon : 'fa-folder'}"></i> ${getDocDisplayName(boxId)}</strong>
-                            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.15rem;">Pagine: ${ranges}</div>
-                        </div>
-                        <span style="background:var(--accent-green); color:#fff; font-size:0.75rem; font-weight:700; padding:0.15rem 0.5rem; border-radius:10px;">${pages.length}</span>
-                    </div>
-                `;
-            });
-            summary.innerHTML = html;
-        }
-
-        function compressPageList(pages) {
-            if (!pages.length) return '';
-            const sorted = [...pages].sort((a,b) => a-b);
-            const ranges = [];
-            let start = sorted[0], end = sorted[0];
-            for (let i = 1; i < sorted.length; i++) {
-                if (sorted[i] === end + 1) {
-                    end = sorted[i];
-                } else {
-                    ranges.push(start === end ? `${start}` : `${start}-${end}`);
-                    start = end = sorted[i];
-                }
-            }
-            ranges.push(start === end ? `${start}` : `${start}-${end}`);
-            return ranges.join(', ');
-        }
-
-        function closeMultiPdfModal() {
-            document.getElementById('multiPdfModal').style.display = 'none';
-            loadedMasterPdfDoc = null;
-            masterPdfArrayBuffer = null;
-            pdfJsDocInstance = null;
-            masterFileName = '';
-            masterFileNames = [];
-            totalPdfPages = 0;
-            pageAssignments = {};
-            pageRotations = {};
-            pageOrder = [];
-            pagePreviewCache = {};
-            multiDragSrcPage = null;
-        }
-
-        async function executePdfSplitting() {
-            if (!loadedMasterPdfDoc) return;
-
-            // Pagine assegnate nell'ordine attuale di pageOrder
-            const orderedAssigned = pageOrder.filter(p => pageAssignments[p]);
-            if (orderedAssigned.length === 0) {
-                alert("Assegna almeno una pagina a un box prima di confermare.");
-                return;
-            }
-
-            // Raggruppa per box rispettando l'ordine di trascinamento
-            const byBox = {};
-            orderedAssigned.forEach(p => {
-                const boxId = pageAssignments[p];
-                if (!byBox[boxId]) byBox[boxId] = [];
-                byBox[boxId].push(p);
-            });
-
-            for (const boxId of Object.keys(byBox)) {
-                const pages1Based = byBox[boxId];
-                const pageIndices = pages1Based.map(p => p - 1);
-                const subPdf = await PDFLib.PDFDocument.create();
-                const copiedPages = await subPdf.copyPages(loadedMasterPdfDoc, pageIndices);
-
-                copiedPages.forEach((copiedPage, idx) => {
-                    const pageNum = pages1Based[idx];
-                    const rot = pageRotations[pageNum] || 0;
-                    if (rot) {
-                        const current = copiedPage.getRotation().angle;
-                        copiedPage.setRotation(PDFLib.degrees((current + rot) % 360));
-                    }
-                    subPdf.addPage(copiedPage);
-                });
-
-                const pdfBytes = await subPdf.save();
-                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-                const rangeLabel = compressPageList(pages1Based);
-                const splitFile = new File([blob], `estratto_pag_${rangeLabel}_${masterFileName}`, { type: 'application/pdf' });
-
-                processFiles([splitFile], parseInt(boxId), false);
-            }
-
-            closeMultiPdfModal();
-            
-            const archiveCard = document.getElementById('archive-card');
-            archiveCard.classList.add('active');
-            archiveCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            
-            archiveCard.classList.add('highlight-card');
-            setTimeout(() => {
-                archiveCard.classList.remove('highlight-card');
-            }, 2000);
-        }
-
-        // --- CONVERTITORI TERMOIDRAULICI ---
-        function swapConverter(type, callback) {
-            const valIn = document.getElementById(`${type}-in`);
-            const valOut = document.getElementById(`${type}-out`);
-            const unitIn = document.getElementById(`${type}-unit-in`);
-            const unitOut = document.getElementById(`${type}-unit-out`);
-
-            const tempVal = valIn.value;
-            valIn.value = valOut.value;
-            
-            const tempUnit = unitIn.value;
-            unitIn.value = unitOut.value;
-            unitOut.value = tempUnit;
-
-            callback();
-        }
-
-        function convertPressure() {
-            const val = parseFloat(document.getElementById('press-in').value) || 0;
-            const uIn = document.getElementById('press-unit-in').value;
-            const uOut = document.getElementById('press-unit-out').value;
-
-            let inBar = 0;
-            switch(uIn) {
-                case 'bar': inBar = val; break;
-                case 'mbar': inBar = val / 1000; break;
-                case 'mca': inBar = val / 10.1972; break;
-                case 'pascal': inBar = val / 100000; break;
-                case 'kpa': inBar = val / 100; break;
-                case 'psi': inBar = val / 14.5038; break;
-                case 'atm': inBar = val / 0.986923; break;
-            }
-
-            let res = 0;
-            switch(uOut) {
-                case 'bar': res = inBar; break;
-                case 'mbar': res = inBar * 1000; break;
-                case 'mca': res = inBar * 10.1972; break;
-                case 'pascal': res = inBar * 100000; break;
-                case 'kpa': res = inBar * 100; break;
-                case 'psi': res = inBar * 14.5038; break;
-                case 'atm': res = inBar * 0.986923; break;
-            }
-            document.getElementById('press-out').value = res.toFixed(4);
-        }
-
-        function convertPower() {
-            const val = parseFloat(document.getElementById('power-in').value) || 0;
-            const uIn = document.getElementById('power-unit-in').value;
-            const uOut = document.getElementById('power-unit-out').value;
-
-            let inKw = 0;
-            switch(uIn) {
-                case 'kw': inKw = val; break;
-                case 'w': inKw = val / 1000; break;
-                case 'kcalh': inKw = val / 860.421; break;
-                case 'btuh': inKw = val / 3412.14; break;
-            }
-
-            let res = 0;
-            switch(uOut) {
-                case 'kw': res = inKw; break;
-                case 'w': res = inKw * 1000; break;
-                case 'kcalh': res = inKw * 860.421; break;
-                case 'btuh': res = inKw * 3412.14; break;
-            }
-            document.getElementById('power-out').value = res.toFixed(2);
-        }
-
-        function convertFlow() {
-            const val = parseFloat(document.getElementById('flow-in').value) || 0;
-            const uIn = document.getElementById('flow-unit-in').value;
-            const uOut = document.getElementById('flow-unit-out').value;
-
-            let inM3h = 0;
-            switch(uIn) {
-                case 'lh': inM3h = val / 1000; break;
-                case 'lmin': inM3h = val * 60 / 1000; break;
-                case 'ls': inM3h = val * 3600 / 1000; break;
-                case 'm3h': inM3h = val; break;
-            }
-
-            let res = 0;
-            switch(uOut) {
-                case 'lh': res = inM3h * 1000; break;
-                case 'lmin': res = inM3h * 1000 / 60; break;
-                case 'ls': res = inM3h * 1000 / 3600; break;
-                case 'm3h': res = inM3h; break;
-            }
-            document.getElementById('flow-out').value = res.toFixed(2);
-        }
-
-        function convertTemp() {
-            const val = parseFloat(document.getElementById('temp-in').value) || 0;
-            const uIn = document.getElementById('temp-unit-in').value;
-            const uOut = document.getElementById('temp-unit-out').value;
-
-            let inC = 0;
-            if(uIn === 'c') inC = val;
-            else if(uIn === 'f') inC = (val - 32) * 5/9;
-            else if(uIn === 'k') inC = val - 273.15;
-
-            let res = 0;
-            if(uOut === 'c') res = inC;
-            else if(uOut === 'f') res = (inC * 9/5) + 32;
-            else if(uOut === 'k') res = inC + 273.15;
-
-            document.getElementById('temp-out').value = res.toFixed(2);
-        }
-
-        function convertEnergy() {
-            const val = parseFloat(document.getElementById('energy-in').value) || 0;
-            const uIn = document.getElementById('energy-unit-in').value;
-            const uOut = document.getElementById('energy-unit-out').value;
-
-            let inKwh = 0;
-            switch(uIn) {
-                case 'kwh': inKwh = val; break;
-                case 'mj': inKwh = val / 3.6; break;
-                case 'kcal': inKwh = val / 860.421; break;
-                case 'btu': inKwh = val / 3412.14; break;
-            }
-
-            let res = 0;
-            switch(uOut) {
-                case 'kwh': res = inKwh; break;
-                case 'mj': res = inKwh * 3.6; break;
-                case 'kcal': res = inKwh * 860.421; break;
-                case 'btu': res = inKwh * 3412.14; break;
-            }
-            document.getElementById('energy-out').value = res.toFixed(2);
-        }
-
-        function convertVolume() {
-            const val = parseFloat(document.getElementById('vol-in').value) || 0;
-            const uIn = document.getElementById('vol-unit-in').value;
-            const uOut = document.getElementById('vol-unit-out').value;
-
-            let inL = 0;
-            switch(uIn) {
-                case 'm3': inL = val * 1000; break;
-                case 'l': inL = val; break;
-                case 'gal': inL = val * 3.78541; break;
-            }
-
-            let res = 0;
-            switch(uOut) {
-                case 'm3': res = inL / 1000; break;
-                case 'l': res = inL; break;
-                case 'gal': res = inL / 3.78541; break;
-            }
-            document.getElementById('vol-out').value = res.toFixed(2);
-        }
-
-        // ===== CALCOLATORE IVA BENI SIGNIFICATIVI =====
-        function formatCurrency(val) {
-            return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(val);
-        }
-
-        function calcolaIVA() {
-            const bene = parseFloat(document.getElementById('valoreBene').value) || 0;
-            const manodopera = parseFloat(document.getElementById('valoreManodopera').value) || 0;
-            const resultsDiv = document.getElementById('ivaResults');
-
-            if (bene <= 0 && manodopera <= 0) {
-                resultsDiv.style.display = 'none';
-                return;
-            }
-
-            resultsDiv.style.display = 'block';
-
-            const totaleImponibile = bene + manodopera;
-            const sogliaMeta = totaleImponibile / 2;
-
-            let imp10 = 0;
-            let imp22 = 0;
-
-            const caseBadge = document.getElementById('caseBadge');
-            const explanNote = document.getElementById('explanNote');
-
-            if (bene <= sogliaMeta) {
-                // Caso 1: il bene è ≤ 50% del totale
-                imp10 = totaleImponibile;
-                imp22 = 0;
-                caseBadge.className = "iva-case-badge iva-case-1";
-                caseBadge.textContent = "CASO 1: Bene Significativo ≤ 50% del Totale";
-                explanNote.textContent = "Poiché il valore del bene significativo non supera il 50% dell'importo totale della prestazione, l'intero imponibile beneficia dell'IVA agevolata al 10%.";
-            } else {
-                // Caso 2: il bene è > 50% del totale
-                imp10 = manodopera * 2;
-                imp22 = totaleImponibile - imp10;
-                caseBadge.className = "iva-case-badge iva-case-2";
-                caseBadge.textContent = "CASO 2: Bene Significativo > 50% del Totale";
-                explanNote.innerHTML = `Il valore del bene supera il 50% del totale. L'IVA al 10% si applica sulla manodopera/materiali (${formatCurrency(manodopera)}) e su una pari quota del bene (${formatCurrency(manodopera)}). La parte rimanente del bene (${formatCurrency(imp22)}) sconta l'IVA ordinaria al 22%.`;
-            }
-
-            const iva10Val = imp10 * 0.10;
-            const iva22Val = imp22 * 0.22;
-            const totIVAVal = iva10Val + iva22Val;
-            const totFatturaVal = totaleImponibile + totIVAVal;
-
-            document.getElementById('imp10').textContent = formatCurrency(imp10);
-            document.getElementById('iva10').textContent = formatCurrency(iva10Val);
-            document.getElementById('imp22').textContent = formatCurrency(imp22);
-            document.getElementById('iva22').textContent = formatCurrency(iva22Val);
-            document.getElementById('totImponibile').textContent = formatCurrency(totaleImponibile);
-            document.getElementById('totIVA').textContent = formatCurrency(totIVAVal);
-            document.getElementById('totFattura').textContent = formatCurrency(totFatturaVal);
-        }
-
-        // ============================================================
-        // STRUMENTI PDF E DOCUMENTI
-        // ============================================================
-        const pdfToolState = {
-            img2pdf: [],      // { id, dataUrl, buffer, type, rotation, name }
-            editpages: [],    // { id, dataUrl, rotation, pdfBuffer, pageIndex }
-            editSourceName: '',
-            merge: [],        // { id, file, name, pages }
-            split: { doc: null, buffer: null, name: '', pageCount: 0, previews: {} },
-            compress: { buffer: null, name: '', pageCount: 0, previews: {} },
-            word2pdf: { html: '', name: '' },
-            pdf2word: { buffer: null, name: '' },
-            excel2pdf: { html: '', name: '' },
-            pdf2excel: { buffer: null, name: '' },
-            dragSrc: null,
-            dragTool: null
-        };
-
-        function switchPdfTool(toolId) {
-            document.querySelectorAll('.pdf-tool-tab').forEach(t => t.classList.toggle('active', t.dataset.tool === toolId));
-            document.querySelectorAll('.pdf-tool-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + toolId));
-        }
-
-        function pdfToolDragOver(e) {
-            e.preventDefault();
-            e.currentTarget.classList.add('dragover');
-        }
-        function pdfToolDragLeave(e) {
-            e.preventDefault();
-            e.currentTarget.classList.remove('dragover');
-        }
-        function pdfToolDrop(e, tool) {
-            e.preventDefault();
-            e.currentTarget.classList.remove('dragover');
-            const files = Array.from(e.dataTransfer.files || []);
-            if (files.length) handlePdfToolFiles(tool, files);
-        }
-        function pdfToolFileSelect(e, tool) {
-            const files = Array.from(e.target.files || []);
-            e.target.value = '';
-            if (files.length) handlePdfToolFiles(tool, files);
-        }
-
-        function downloadBlob(blob, filename) {
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = filename;
-            a.click();
-            setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-        }
-
-        async function renderPdfPagePreview(pdfJsDoc, pageNum, scale = 1.6) {
-            const page = await pdfJsDoc.getPage(pageNum);
-            const viewport = page.getViewport({ scale });
-            const canvas = document.createElement('canvas');
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-            await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-            return canvas.toDataURL('image/jpeg', 0.9);
-        }
-
-        function applyCardRotation(img, rot) {
-            const r = ((rot || 0) % 360 + 360) % 360;
-            if (r === 90 || r === 270) img.style.transform = `rotate(${r}deg) scale(0.78)`;
-            else if (r === 180) img.style.transform = 'rotate(180deg)';
-            else img.style.transform = '';
-        }
-
-        async function handlePdfToolFiles(tool, files) {
-            try {
-                if (tool === 'img2pdf') {
-                    for (const f of files) {
-                        if (!f.type.startsWith('image/')) continue;
-                        const buf = await f.arrayBuffer();
-                        const dataUrl = await new Promise(res => {
-                            const r = new FileReader();
-                            r.onload = () => res(r.result);
-                            r.readAsDataURL(new Blob([buf], { type: f.type }));
-                        });
-                        pdfToolState.img2pdf.push({
-                            id: Date.now() + Math.random(),
-                            dataUrl,
-                            buffer: buf.slice(0),
-                            type: f.type,
-                            rotation: 0,
-                            name: f.name
-                        });
-                    }
-                    renderImg2PdfGrid();
-                } else if (tool === 'editpages') {
-                    const f = files.find(x => x.type === 'application/pdf' || /\.pdf$/i.test(x.name));
-                    if (!f) { alert('Seleziona un file PDF.'); return; }
-                    await loadEditPagesPdf(f);
-                } else if (tool === 'merge') {
-                    for (const f of files) {
-                        if (f.type !== 'application/pdf' && !/\.pdf$/i.test(f.name)) continue;
-                        const buf = await f.arrayBuffer();
-                        const doc = await PDFLib.PDFDocument.load(buf.slice(0));
-                        pdfToolState.merge.push({
-                            id: Date.now() + Math.random(),
-                            file: f,
-                            buffer: buf.slice(0),
-                            name: f.name,
-                            pages: doc.getPageCount()
-                        });
-                    }
-                    renderMergeList();
-                } else if (tool === 'split') {
-                    const f = files.find(x => x.type === 'application/pdf' || /\.pdf$/i.test(x.name));
-                    if (!f) { alert('Seleziona un file PDF.'); return; }
-                    await loadSplitPdf(f);
-                } else if (tool === 'compress') {
-                    const f = files.find(x => x.type === 'application/pdf' || /\.pdf$/i.test(x.name));
-                    if (!f) { alert('Seleziona un file PDF.'); return; }
-                    await loadCompressPdf(f);
-                } else if (tool === 'word2pdf') {
-                    const f = files.find(x => /\.docx$/i.test(x.name) || x.type.includes('wordprocessingml'));
-                    if (!f) { alert('Seleziona un file .docx'); return; }
-                    await loadWordFile(f);
-                } else if (tool === 'pdf2word') {
-                    const f = files.find(x => x.type === 'application/pdf' || /\.pdf$/i.test(x.name));
-                    if (!f) { alert('Seleziona un PDF'); return; }
-                    pdfToolState.pdf2word = { buffer: await f.arrayBuffer(), name: f.name };
-                    document.getElementById('info-pdf2word').textContent = `File: ${f.name}`;
-                    document.getElementById('btn-pdf2word').disabled = false;
-                } else if (tool === 'excel2pdf') {
-                    const f = files.find(x => /\.xlsx?$/i.test(x.name) || x.type.includes('spreadsheet') || x.type.includes('excel'));
-                    if (!f) { alert('Seleziona un file Excel (.xlsx / .xls)'); return; }
-                    await loadExcelFile(f);
-                } else if (tool === 'pdf2excel') {
-                    const f = files.find(x => x.type === 'application/pdf' || /\.pdf$/i.test(x.name));
-                    if (!f) { alert('Seleziona un PDF'); return; }
-                    pdfToolState.pdf2excel = { buffer: await f.arrayBuffer(), name: f.name };
-                    document.getElementById('info-pdf2excel').textContent = `File: ${f.name}`;
-                    document.getElementById('btn-pdf2excel').disabled = false;
-                }
-            } catch (err) {
-                console.error(err);
-                alert('Errore caricamento: ' + (err.message || err));
-            }
-        }
-
-        function clearPdfTool(tool) {
-            if (tool === 'img2pdf') {
-                pdfToolState.img2pdf = [];
-                renderImg2PdfGrid();
-            } else if (tool === 'editpages') {
-                pdfToolState.editpages = [];
-                pdfToolState.editSourceName = '';
-                document.getElementById('grid-editpages').innerHTML = '';
-                document.getElementById('btn-editpages').disabled = true;
-            } else if (tool === 'merge') {
-                pdfToolState.merge = [];
-                renderMergeList();
-            } else if (tool === 'split') {
-                pdfToolState.split = { doc: null, buffer: null, name: '', pageCount: 0, previews: {} };
-                document.getElementById('grid-split').innerHTML = '';
-                document.getElementById('split-range-controls').style.display = 'none';
-            } else if (tool === 'compress') {
-                pdfToolState.compress = { buffer: null, name: '', pageCount: 0, previews: {} };
-                document.getElementById('grid-compress').innerHTML = '';
-                document.getElementById('compress-info').textContent = '';
-                document.getElementById('compress-quality-row').style.display = 'none';
-                document.getElementById('btn-compress').disabled = true;
-            }
-        }
-
-        // ---- Immagini → PDF ----
-        function renderImg2PdfGrid() {
-            const grid = document.getElementById('grid-img2pdf');
-            grid.innerHTML = '';
-            const items = pdfToolState.img2pdf;
-            document.getElementById('btn-img2pdf').disabled = items.length === 0;
-
-            items.forEach((item, index) => {
-                const card = document.createElement('div');
-                card.className = 'pdf-page-card';
-                card.draggable = true;
-                card.dataset.index = index;
-                card.innerHTML = `
-                    <div class="pg-label"><span>#${index + 1}</span><span style="font-size:0.7rem;color:var(--text-muted);font-weight:500;">${item.rotation ? item.rotation + '°' : ''}</span></div>
-                    <div class="pg-img-wrap"><img alt="img" src="${item.dataUrl}"></div>
-                    <div class="pg-actions">
-                        <button type="button" title="-90°"><i class="fa-solid fa-rotate-left"></i></button>
-                        <button type="button" title="+90°"><i class="fa-solid fa-rotate-right"></i></button>
-                        <button type="button" class="danger" title="Elimina"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>
-                `;
-                const img = card.querySelector('img');
-                applyCardRotation(img, item.rotation);
-                const btns = card.querySelectorAll('.pg-actions button');
-                btns[0].onclick = (e) => { e.stopPropagation(); item.rotation = (item.rotation - 90 + 360) % 360; renderImg2PdfGrid(); };
-                btns[1].onclick = (e) => { e.stopPropagation(); item.rotation = (item.rotation + 90) % 360; renderImg2PdfGrid(); };
-                btns[2].onclick = (e) => { e.stopPropagation(); pdfToolState.img2pdf.splice(index, 1); renderImg2PdfGrid(); };
-                bindPdfCardDrag(card, 'img2pdf', index);
-                grid.appendChild(card);
-            });
-        }
-
-        function bindPdfCardDrag(card, tool, index) {
-            card.addEventListener('dragstart', (e) => {
-                pdfToolState.dragSrc = index;
-                pdfToolState.dragTool = tool;
-                card.classList.add('dragging');
-                e.dataTransfer.effectAllowed = 'move';
-            });
-            card.addEventListener('dragend', () => {
-                card.classList.remove('dragging');
-                pdfToolState.dragSrc = null;
-                document.querySelectorAll('.pdf-page-card').forEach(c => c.classList.remove('drag-over'));
-            });
-            card.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                card.classList.add('drag-over');
-            });
-            card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
-            card.addEventListener('drop', (e) => {
-                e.preventDefault();
-                card.classList.remove('drag-over');
-                if (pdfToolState.dragTool !== tool || pdfToolState.dragSrc === null) return;
-                const from = pdfToolState.dragSrc;
-                const to = index;
-                if (from === to) return;
-                const arr = tool === 'img2pdf' ? pdfToolState.img2pdf : pdfToolState.editpages;
-                const moved = arr.splice(from, 1)[0];
-                arr.splice(to, 0, moved);
-                if (tool === 'img2pdf') renderImg2PdfGrid();
-                else renderEditPagesGrid();
-            });
-        }
-
-        async function rotateImageBufferLocal(arrayBuffer, degrees) {
-            return new Promise((resolve, reject) => {
-                const blob = new Blob([arrayBuffer]);
-                const url = URL.createObjectURL(blob);
-                const img = new Image();
-                img.onload = () => {
-                    const rad = (degrees * Math.PI) / 180;
-                    const sw = img.width, sh = img.height;
-                    const cw = (degrees === 90 || degrees === 270) ? sh : sw;
-                    const ch = (degrees === 90 || degrees === 270) ? sw : sh;
-                    const canvas = document.createElement('canvas');
-                    canvas.width = cw; canvas.height = ch;
-                    const ctx = canvas.getContext('2d');
-                    ctx.fillStyle = '#fff';
-                    ctx.fillRect(0, 0, cw, ch);
-                    ctx.translate(cw / 2, ch / 2);
-                    ctx.rotate(rad);
-                    ctx.drawImage(img, -sw / 2, -sh / 2);
-                    canvas.toBlob(async (b) => {
-                        URL.revokeObjectURL(url);
-                        if (!b) { reject(new Error('rotate fail')); return; }
-                        resolve(await b.arrayBuffer());
-                    }, 'image/jpeg', 0.92);
-                };
-                img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('img fail')); };
-                img.src = url;
-            });
-        }
-
-        async function runImg2Pdf() {
-            const items = pdfToolState.img2pdf;
-            if (!items.length) return;
-            const btn = document.getElementById('btn-img2pdf');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Genero...';
-            try {
-                const pdfDoc = await PDFLib.PDFDocument.create();
-                for (const item of items) {
-                    let buf = item.buffer.slice(0);
-                    if (item.rotation || (item.type && item.type.includes('png'))) {
-                        buf = await rotateImageBufferLocal(buf, item.rotation || 0);
-                    } else if (item.type && !item.type.includes('jpeg') && !item.type.includes('jpg')) {
-                        buf = await imageToCompressedJpegBytes(buf, 0.92);
-                    }
-                    const emb = await pdfDoc.embedJpg(buf);
-                    const page = pdfDoc.addPage([emb.width, emb.height]);
-                    page.drawImage(emb, { x: 0, y: 0, width: emb.width, height: emb.height });
-                }
-                const bytes = await pdfDoc.save();
-                downloadBlob(new Blob([bytes], { type: 'application/pdf' }), 'immagini.pdf');
-            } catch (err) {
-                console.error(err);
-                alert('Errore: ' + (err.message || err));
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Genera e scarica PDF';
-            }
-        }
-
-        // ---- Ruota / Riordina / Elimina ----
-        async function loadEditPagesPdf(file) {
-            const buf = await file.arrayBuffer();
-            const safe = buf.slice(0);
-            const pdfJs = await pdfjsLib.getDocument({ data: new Uint8Array(safe.slice(0)) }).promise;
-            const n = pdfJs.numPages;
-            pdfToolState.editpages = [];
-            pdfToolState.editSourceName = file.name;
-            for (let p = 1; p <= n; p++) {
-                const dataUrl = await renderPdfPagePreview(pdfJs, p, 1.7);
-                pdfToolState.editpages.push({
-                    id: p,
-                    dataUrl,
-                    rotation: 0,
-                    pdfBuffer: safe.slice(0),
-                    pageIndex: p - 1
-                });
-            }
-            renderEditPagesGrid();
-        }
-
-        function renderEditPagesGrid() {
-            const grid = document.getElementById('grid-editpages');
-            grid.innerHTML = '';
-            const items = pdfToolState.editpages;
-            document.getElementById('btn-editpages').disabled = items.length === 0;
-            items.forEach((item, index) => {
-                const card = document.createElement('div');
-                card.className = 'pdf-page-card';
-                card.draggable = true;
-                card.dataset.index = index;
-                card.innerHTML = `
-                    <div class="pg-label"><span>Pag. ${index + 1}</span><span style="font-size:0.7rem;color:var(--text-muted);font-weight:500;">${item.rotation ? item.rotation + '°' : ''}</span></div>
-                    <div class="pg-img-wrap"><img alt="pag" src="${item.dataUrl}"></div>
-                    <div class="pg-actions">
-                        <button type="button" title="-90°"><i class="fa-solid fa-rotate-left"></i></button>
-                        <button type="button" title="+90°"><i class="fa-solid fa-rotate-right"></i></button>
-                        <button type="button" class="danger" title="Elimina"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>
-                `;
-                applyCardRotation(card.querySelector('img'), item.rotation);
-                const btns = card.querySelectorAll('.pg-actions button');
-                btns[0].onclick = (e) => { e.stopPropagation(); item.rotation = (item.rotation - 90 + 360) % 360; renderEditPagesGrid(); };
-                btns[1].onclick = (e) => { e.stopPropagation(); item.rotation = (item.rotation + 90) % 360; renderEditPagesGrid(); };
-                btns[2].onclick = (e) => {
-                    e.stopPropagation();
-                    if (items.length <= 1) {
-                        if (!confirm('Eliminare l’ultima pagina? Il risultato sarà vuoto.')) return;
-                    }
-                    pdfToolState.editpages.splice(index, 1);
-                    renderEditPagesGrid();
-                };
-                bindPdfCardDrag(card, 'editpages', index);
-                grid.appendChild(card);
-            });
-        }
-
-        async function runEditPages() {
-            const items = pdfToolState.editpages;
-            if (!items.length) return;
-            const btn = document.getElementById('btn-editpages');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Genero...';
-            try {
-                const pdfDoc = await PDFLib.PDFDocument.create();
-                for (const item of items) {
-                    const donor = await PDFLib.PDFDocument.load(item.pdfBuffer.slice(0));
-                    const [copied] = await pdfDoc.copyPages(donor, [item.pageIndex]);
-                    if (item.rotation) {
-                        const cur = copied.getRotation().angle;
-                        copied.setRotation(PDFLib.degrees((cur + item.rotation) % 360));
-                    }
-                    pdfDoc.addPage(copied);
-                }
-                const bytes = await pdfDoc.save();
-                const base = (pdfToolState.editSourceName || 'documento').replace(/\.pdf$/i, '');
-                downloadBlob(new Blob([bytes], { type: 'application/pdf' }), base + '_modificato.pdf');
-            } catch (err) {
-                console.error(err);
-                alert('Errore: ' + (err.message || err));
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-download"></i> Scarica PDF modificato';
-            }
-        }
-
-        // ---- Unisci PDF ----
-        function renderMergeList() {
-            const list = document.getElementById('list-merge');
-            list.innerHTML = '';
-            const items = pdfToolState.merge;
-            document.getElementById('btn-merge').disabled = items.length < 1;
-            items.forEach((item, index) => {
-                const row = document.createElement('div');
-                row.className = 'pdf-file-item';
-                row.draggable = true;
-                row.dataset.index = index;
-                row.innerHTML = `
-                    <i class="fa-solid fa-grip-vertical" style="color:var(--text-muted);"></i>
-                    <span style="font-weight:700;color:var(--accent-orange);min-width:1.5rem;">${index + 1}.</span>
-                    <span class="fi-name">${item.name}</span>
-                    <span style="font-size:0.8rem;color:var(--text-muted);">${item.pages} pag.</span>
-                    <button type="button" title="Rimuovi"><i class="fa-solid fa-xmark"></i></button>
-                `;
-                row.querySelector('button').onclick = () => {
-                    pdfToolState.merge.splice(index, 1);
-                    renderMergeList();
-                };
-                row.addEventListener('dragstart', (e) => {
-                    pdfToolState.dragSrc = index;
-                    pdfToolState.dragTool = 'merge';
-                    row.style.opacity = '0.45';
-                    e.dataTransfer.effectAllowed = 'move';
-                });
-                row.addEventListener('dragend', () => { row.style.opacity = '1'; pdfToolState.dragSrc = null; });
-                row.addEventListener('dragover', (e) => { e.preventDefault(); row.style.outline = '2px dashed var(--accent-cyan)'; });
-                row.addEventListener('dragleave', () => { row.style.outline = ''; });
-                row.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    row.style.outline = '';
-                    if (pdfToolState.dragTool !== 'merge' || pdfToolState.dragSrc === null) return;
-                    const from = pdfToolState.dragSrc;
-                    const to = index;
-                    if (from === to) return;
-                    const moved = pdfToolState.merge.splice(from, 1)[0];
-                    pdfToolState.merge.splice(to, 0, moved);
-                    renderMergeList();
-                });
-                list.appendChild(row);
-            });
-        }
-
-        async function runMergePdf() {
-            const items = pdfToolState.merge;
-            if (!items.length) return;
-            const btn = document.getElementById('btn-merge');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Unisco...';
-            try {
-                const out = await PDFLib.PDFDocument.create();
-                for (const item of items) {
-                    const donor = await PDFLib.PDFDocument.load(item.buffer.slice(0));
-                    const pages = await out.copyPages(donor, donor.getPageIndices());
-                    pages.forEach(p => out.addPage(p));
-                }
-                const bytes = await out.save();
-                downloadBlob(new Blob([bytes], { type: 'application/pdf' }), 'unito.pdf');
-            } catch (err) {
-                console.error(err);
-                alert('Errore: ' + (err.message || err));
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-object-group"></i> Unisci e scarica';
-            }
-        }
-
-        // ---- Dividi PDF ----
-        async function loadSplitPdf(file) {
-            const buf = await file.arrayBuffer();
-            const doc = await PDFLib.PDFDocument.load(buf.slice(0));
-            const pdfJs = await pdfjsLib.getDocument({ data: new Uint8Array(buf.slice(0)) }).promise;
-            const n = pdfJs.numPages;
-            const previews = {};
-            for (let i = 1; i <= n; i++) {
-                previews[i] = await renderPdfPagePreview(pdfJs, i, 1.4);
-            }
-            pdfToolState.split = { doc, buffer: buf.slice(0), name: file.name, pageCount: n, previews };
-            document.getElementById('split-range-controls').style.display = 'flex';
-            document.getElementById('splitFrom').value = 1;
-            document.getElementById('splitFrom').max = n;
-            document.getElementById('splitTo').value = n;
-            document.getElementById('splitTo').max = n;
-            const grid = document.getElementById('grid-split');
-            grid.innerHTML = '';
-            for (let i = 1; i <= n; i++) {
-                const card = document.createElement('div');
-                card.className = 'pdf-page-card';
-                card.style.cursor = 'default';
-                card.innerHTML = `
-                    <div class="pg-label"><span>Pag. ${i}</span></div>
-                    <div class="pg-img-wrap" style="height:200px;"><img alt="p" src="${previews[i]}"></div>
-                `;
-                grid.appendChild(card);
-            }
-        }
-
-        async function runSplitRange() {
-            const st = pdfToolState.split;
-            if (!st.doc) return;
-            let from = parseInt(document.getElementById('splitFrom').value) || 1;
-            let to = parseInt(document.getElementById('splitTo').value) || 1;
-            from = Math.max(1, Math.min(from, st.pageCount));
-            to = Math.max(from, Math.min(to, st.pageCount));
-            const indices = [];
-            for (let i = from; i <= to; i++) indices.push(i - 1);
-            const out = await PDFLib.PDFDocument.create();
-            const pages = await out.copyPages(st.doc, indices);
-            pages.forEach(p => out.addPage(p));
-            const bytes = await out.save();
-            const base = (st.name || 'documento').replace(/\.pdf$/i, '');
-            downloadBlob(new Blob([bytes], { type: 'application/pdf' }), `${base}_pag_${from}-${to}.pdf`);
-        }
-
-        async function runSplitAll() {
-            const st = pdfToolState.split;
-            if (!st.doc) return;
-            const base = (st.name || 'documento').replace(/\.pdf$/i, '');
-            for (let i = 0; i < st.pageCount; i++) {
-                const out = await PDFLib.PDFDocument.create();
-                const [page] = await out.copyPages(st.doc, [i]);
-                out.addPage(page);
-                const bytes = await out.save();
-                downloadBlob(new Blob([bytes], { type: 'application/pdf' }), `${base}_pag_${i + 1}.pdf`);
-                await new Promise(r => setTimeout(r, 200));
-            }
-        }
-
-        // ---- Comprimi PDF ----
-        async function loadCompressPdf(file) {
-            const buf = await file.arrayBuffer();
-            const pdfJs = await pdfjsLib.getDocument({ data: new Uint8Array(buf.slice(0)) }).promise;
-            const n = pdfJs.numPages;
-            const previews = {};
-            for (let i = 1; i <= Math.min(n, 6); i++) {
-                previews[i] = await renderPdfPagePreview(pdfJs, i, 1.2);
-            }
-            pdfToolState.compress = { buffer: buf.slice(0), name: file.name, pageCount: n, previews };
-            document.getElementById('compress-info').textContent = `File: ${file.name} · ${n} pagine · ${(buf.byteLength / 1024).toFixed(0)} KB`;
-            document.getElementById('compress-quality-row').style.display = 'flex';
-            document.getElementById('btn-compress').disabled = false;
-            const grid = document.getElementById('grid-compress');
-            grid.innerHTML = '';
-            Object.keys(previews).forEach(k => {
-                const card = document.createElement('div');
-                card.className = 'pdf-page-card';
-                card.style.cursor = 'default';
-                card.innerHTML = `
-                    <div class="pg-label"><span>Pag. ${k}</span></div>
-                    <div class="pg-img-wrap" style="height:180px;"><img alt="p" src="${previews[k]}"></div>
-                `;
-                grid.appendChild(card);
-            });
-            if (n > 6) {
-                const more = document.createElement('p');
-                more.style.cssText = 'grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:0.85rem;';
-                more.textContent = `… e altre ${n - 6} pagine`;
-                grid.appendChild(more);
-            }
-        }
-
-        async function runCompressPdf() {
-            const st = pdfToolState.compress;
-            if (!st.buffer) return;
-            const quality = parseFloat(document.getElementById('compressQuality').value) || 0.72;
-            const btn = document.getElementById('btn-compress');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Comprimo...';
-            try {
-                const pdfJs = await pdfjsLib.getDocument({ data: new Uint8Array(st.buffer.slice(0)) }).promise;
-                const out = await PDFLib.PDFDocument.create();
-                for (let p = 1; p <= pdfJs.numPages; p++) {
-                    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Pagina ${p}/${pdfJs.numPages}...`;
-                    const jpegBytes = await pdfPageToCompressedJpeg(pdfJs, p, quality, 1.5);
-                    const img = await out.embedJpg(jpegBytes);
-                    const page = out.addPage([img.width, img.height]);
-                    page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
-                }
-                const bytes = await out.save();
-                const base = (st.name || 'documento').replace(/\.pdf$/i, '');
-                downloadBlob(new Blob([bytes], { type: 'application/pdf' }), base + '_compresso.pdf');
-                document.getElementById('compress-info').innerHTML =
-                    `Originale: ${(st.buffer.byteLength / 1024).toFixed(0)} KB → Compresso: <strong>${(bytes.byteLength / 1024).toFixed(0)} KB</strong>`;
-            } catch (err) {
-                console.error(err);
-                alert('Errore compressione: ' + (err.message || err));
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-file-zipper"></i> Comprimi e scarica';
-            }
-        }
-
-        // ---- Word → PDF ----
-        async function loadWordFile(file) {
-            const arrayBuffer = await file.arrayBuffer();
-            const result = await mammoth.convertToHtml({ arrayBuffer });
-            pdfToolState.word2pdf = { html: result.value || '<p>(documento vuoto)</p>', name: file.name };
-            const preview = document.getElementById('preview-word2pdf');
-            preview.style.display = 'block';
-            preview.innerHTML = pdfToolState.word2pdf.html;
-            document.getElementById('btn-word2pdf').disabled = false;
-        }
-
-        async function runWord2Pdf() {
-            const st = pdfToolState.word2pdf;
-            if (!st.html) return;
-            const btn = document.getElementById('btn-word2pdf');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Converto...';
-            try {
-                const wrap = document.createElement('div');
-                wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:800px;padding:40px;background:#fff;color:#000;font-family:Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.5;';
-                wrap.innerHTML = st.html;
-                document.body.appendChild(wrap);
-                const canvas = await html2canvas(wrap, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-                document.body.removeChild(wrap);
-                const imgData = canvas.toDataURL('image/jpeg', 0.92);
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-                const pageW = pdf.internal.pageSize.getWidth();
-                const pageH = pdf.internal.pageSize.getHeight();
-                const margin = 10;
-                const usableW = pageW - margin * 2;
-                const imgW = usableW;
-                const imgH = (canvas.height * imgW) / canvas.width;
-                let heightLeft = imgH;
-                let position = margin;
-                pdf.addImage(imgData, 'JPEG', margin, position, imgW, imgH);
-                heightLeft -= (pageH - margin * 2);
-                while (heightLeft > 0) {
-                    position = margin - (imgH - heightLeft);
-                    pdf.addPage();
-                    pdf.addImage(imgData, 'JPEG', margin, position, imgW, imgH);
-                    heightLeft -= (pageH - margin * 2);
-                }
-                const base = (st.name || 'documento').replace(/\.docx$/i, '');
-                pdf.save(base + '.pdf');
-            } catch (err) {
-                console.error(err);
-                alert('Errore conversione Word: ' + (err.message || err));
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Converti in PDF';
-            }
-        }
-
-        // ---- PDF → Word (testo) ----
-        async function runPdf2Word() {
-            const st = pdfToolState.pdf2word;
-            if (!st.buffer) return;
-            const btn = document.getElementById('btn-pdf2word');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Estraggo...';
-            try {
-                const pdfJs = await pdfjsLib.getDocument({ data: new Uint8Array(st.buffer.slice(0)) }).promise;
-                let text = '';
-                for (let i = 1; i <= pdfJs.numPages; i++) {
-                    const page = await pdfJs.getPage(i);
-                    const content = await page.getTextContent();
-                    const line = content.items.map(it => it.str).join(' ');
-                    text += line + '\n\n';
-                }
-                // HTML salvabile come .doc (Word apre HTML)
-                const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${st.name}</title></head><body><pre style="font-family:Calibri,Arial,sans-serif;font-size:12pt;white-space:pre-wrap;">${text.replace(/</g, '&lt;')}</pre></body></html>`;
-                const blob = new Blob([html], { type: 'application/msword' });
-                const base = (st.name || 'documento').replace(/\.pdf$/i, '');
-                downloadBlob(blob, base + '.doc');
-            } catch (err) {
-                console.error(err);
-                alert('Errore: ' + (err.message || err));
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-file-word"></i> Scarica .doc';
-            }
-        }
-
-        // ---- Excel → PDF ----
-        async function loadExcelFile(file) {
-            const buf = await file.arrayBuffer();
-            const wb = XLSX.read(buf, { type: 'array' });
-            const sheetName = wb.SheetNames[0];
-            const sheet = wb.Sheets[sheetName];
-            const html = XLSX.utils.sheet_to_html(sheet, { id: 'excel-table-preview' });
-            pdfToolState.excel2pdf = { html, name: file.name };
-            const preview = document.getElementById('preview-excel2pdf');
-            preview.style.display = 'block';
-            preview.innerHTML = html;
-            const table = preview.querySelector('table');
-            if (table) {
-                table.style.cssText = 'border-collapse:collapse;width:100%;font-size:12px;';
-                table.querySelectorAll('td,th').forEach(c => {
-                    c.style.cssText = 'border:1px solid #ccc;padding:4px 6px;';
-                });
-            }
-            document.getElementById('btn-excel2pdf').disabled = false;
-        }
-
-        async function runExcel2Pdf() {
-            const st = pdfToolState.excel2pdf;
-            if (!st.html) return;
-            const btn = document.getElementById('btn-excel2pdf');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Converto...';
-            try {
-                const wrap = document.createElement('div');
-                wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:1100px;padding:20px;background:#fff;color:#000;';
-                wrap.innerHTML = st.html;
-                const table = wrap.querySelector('table');
-                if (table) {
-                    table.style.cssText = 'border-collapse:collapse;width:100%;font-size:11px;font-family:Arial,sans-serif;';
-                    table.querySelectorAll('td,th').forEach(c => {
-                        c.style.cssText = 'border:1px solid #999;padding:3px 5px;';
-                    });
-                }
-                document.body.appendChild(wrap);
-                const canvas = await html2canvas(wrap, { scale: 2, backgroundColor: '#ffffff' });
-                document.body.removeChild(wrap);
-                const imgData = canvas.toDataURL('image/jpeg', 0.92);
-                const { jsPDF } = window.jspdf;
-                const landscape = canvas.width > canvas.height;
-                const pdf = new jsPDF({ orientation: landscape ? 'l' : 'p', unit: 'mm', format: 'a4' });
-                const pageW = pdf.internal.pageSize.getWidth();
-                const pageH = pdf.internal.pageSize.getHeight();
-                const margin = 8;
-                const usableW = pageW - margin * 2;
-                const imgW = usableW;
-                const imgH = (canvas.height * imgW) / canvas.width;
-                let heightLeft = imgH;
-                let position = margin;
-                pdf.addImage(imgData, 'JPEG', margin, position, imgW, imgH);
-                heightLeft -= (pageH - margin * 2);
-                while (heightLeft > 0) {
-                    position = margin - (imgH - heightLeft);
-                    pdf.addPage();
-                    pdf.addImage(imgData, 'JPEG', margin, position, imgW, imgH);
-                    heightLeft -= (pageH - margin * 2);
-                }
-                const base = (st.name || 'foglio').replace(/\.xlsx?$/i, '');
-                pdf.save(base + '.pdf');
-            } catch (err) {
-                console.error(err);
-                alert('Errore conversione Excel: ' + (err.message || err));
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Converti in PDF';
-            }
-        }
-
-        // ---- PDF → Excel ----
-        async function runPdf2Excel() {
-            const st = pdfToolState.pdf2excel;
-            if (!st.buffer) return;
-            const btn = document.getElementById('btn-pdf2excel');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Estraggo...';
-            try {
-                const pdfJs = await pdfjsLib.getDocument({ data: new Uint8Array(st.buffer.slice(0)) }).promise;
-                const rows = [];
-                for (let i = 1; i <= pdfJs.numPages; i++) {
-                    const page = await pdfJs.getPage(i);
-                    const content = await page.getTextContent();
-                    // Raggruppa per y approssimata
-                    const linesMap = {};
-                    content.items.forEach(it => {
-                        const y = Math.round(it.transform[5]);
-                        if (!linesMap[y]) linesMap[y] = [];
-                        linesMap[y].push(it.str);
-                    });
-                    const ys = Object.keys(linesMap).map(Number).sort((a, b) => b - a);
-                    ys.forEach(y => {
-                        const line = linesMap[y].join(' ').trim();
-                        if (line) rows.push([`Pag.${i}`, line]);
-                    });
-                    rows.push(['', '']);
-                }
-                const ws = XLSX.utils.aoa_to_sheet([['Pagina', 'Testo'], ...rows]);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, 'Estratto');
-                const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-                const base = (st.name || 'documento').replace(/\.pdf$/i, '');
-                downloadBlob(new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), base + '.xlsx');
-            } catch (err) {
-                console.error(err);
-                alert('Errore: ' + (err.message || err));
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-file-excel"></i> Scarica .xlsx';
-            }
-        }
-    </script>
-
-    </div><!-- /.page-wrap -->
-</body>
-</html>
+                        const page = pdfDoc.addPage([embedded.width, embe
