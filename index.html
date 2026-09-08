@@ -1227,7 +1227,8 @@
     </style>
 
     <!-- MSAL.js per autenticazione Microsoft -->
-    <script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+    <script src="https://alcdn.msauth.net/browser/2.39.0/js/msal-browser.min.js"></script>
+    <script>if(typeof msal==="undefined"){document.write("<script src=\"https://alcdn.msftauth.net/browser/2.39.0/js/msal-browser.min.js\"><\/script>");}</script>
 </head>
 <body>
 
@@ -4851,8 +4852,9 @@
             auth: {
                 clientId: '50ed56ee-329d-40cd-ba1a-3eb01a9b25ad',
                 authority: 'https://login.microsoftonline.com/f8bd4b65-5b30-4f96-8feb-0e7c3c394a0a',
-                redirectUri: window.location.origin + window.location.pathname.replace(/\/?$/, '/'),
-                postLogoutRedirectUri: window.location.origin + window.location.pathname.replace(/\/?$/, '/')
+                // Deve coincidere ESATTAMENTE con l'URI registrato in Entra (SPA)
+                redirectUri: (window.location.origin + window.location.pathname).replace(/index\.html$/i, '').replace(/\/?$/, '/'),
+                postLogoutRedirectUri: (window.location.origin + window.location.pathname).replace(/index\.html$/i, '').replace(/\/?$/, '/')
             },
             cache: {
                 cacheLocation: 'localStorage',
@@ -4865,6 +4867,7 @@
 
         let soprMsalInstance = null;
         let soprAccount = null;
+        let soprMsalReady = null; // Promise di inizializzazione
 
         function soprClassify(title) {
             const t = (title || '').toUpperCase();
@@ -4882,21 +4885,27 @@
         }
 
         function initSoprMsal() {
+            if (soprMsalReady) return soprMsalReady;
             if (typeof msal === 'undefined') {
-                console.warn('MSAL non caricato');
-                return;
+                console.error('MSAL non caricato (script msal-browser mancante o bloccato)');
+                soprShowError('Libreria Microsoft (MSAL) non caricata. Controlla connessione o ad-blocker.');
+                soprMsalReady = Promise.reject(new Error('MSAL non disponibile'));
+                return soprMsalReady;
             }
             soprMsalInstance = new msal.PublicClientApplication(SOPR_MSAL_CONFIG);
-            soprMsalInstance.initialize().then(() => {
+            soprMsalReady = soprMsalInstance.initialize().then(() => {
                 const accounts = soprMsalInstance.getAllAccounts();
                 if (accounts.length > 0) {
                     soprAccount = accounts[0];
                     soprUpdateAuthUI(true);
-                    // tenta silenzioso
-                    soprMsalInstance.acquireTokenSilent({ scopes: SOPR_SCOPES, account: soprAccount })
-                        .catch(() => { /* ok, login interattivo al bisogno */ });
+                    return soprMsalInstance.acquireTokenSilent({ scopes: SOPR_SCOPES, account: soprAccount }).catch(() => null);
                 }
-            }).catch(err => console.error('MSAL init error', err));
+            }).catch(err => {
+                console.error('MSAL init error', err);
+                soprShowError('Errore inizializzazione Microsoft: ' + (err.message || err));
+                throw err;
+            });
+            return soprMsalReady;
         }
 
         function soprUpdateAuthUI(loggedIn) {
@@ -4904,29 +4913,53 @@
             const loginBtn = document.getElementById('soprLoginBtn');
             const logoutBtn = document.getElementById('soprLogoutBtn');
             const controls = document.getElementById('soprControls');
+            if (!status || !loginBtn) return;
             if (loggedIn && soprAccount) {
                 status.innerHTML = `<i class="fa-solid fa-circle" style="color:var(--accent-green); font-size:0.6rem;"></i> Connesso come <strong>${soprAccount.username || soprAccount.name}</strong>`;
                 loginBtn.style.display = 'none';
-                logoutBtn.style.display = 'inline-block';
-                controls.style.display = 'block';
+                if (logoutBtn) logoutBtn.style.display = 'inline-block';
+                if (controls) controls.style.display = 'block';
                 soprApplyPreset();
             } else {
                 status.innerHTML = `<i class="fa-solid fa-circle" style="color:#999; font-size:0.6rem;"></i> Non connesso`;
                 loginBtn.style.display = 'inline-block';
-                logoutBtn.style.display = 'none';
-                controls.style.display = 'none';
+                if (logoutBtn) logoutBtn.style.display = 'none';
+                if (controls) controls.style.display = 'none';
             }
         }
 
         async function soprLogin() {
-            if (!soprMsalInstance) initSoprMsal();
+            const btn = document.getElementById('soprLoginBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Apertura login...';
+            }
+            soprHideError();
             try {
-                const result = await soprMsalInstance.loginPopup({ scopes: SOPR_SCOPES });
+                await initSoprMsal();
+                if (!soprMsalInstance) throw new Error('MSAL non inizializzato');
+
+                const loginRequest = { scopes: SOPR_SCOPES };
+                let result;
+                try {
+                    result = await soprMsalInstance.loginPopup(loginRequest);
+                } catch (popupErr) {
+                    console.warn('loginPopup fallito, provo loginRedirect', popupErr);
+                    await soprMsalInstance.loginRedirect(loginRequest);
+                    return; // la pagina verrà ricaricata dal redirect
+                }
                 soprAccount = result.account;
                 soprUpdateAuthUI(true);
             } catch (err) {
-                console.error(err);
-                soprShowError('Login fallito: ' + (err.message || err));
+                console.error('soprLogin error', err);
+                const msg = err.errorMessage || err.message || String(err);
+                soprShowError('Login fallito: ' + msg +
+                    ' — Usa l\'URL https://angelotermocinque-rgb.github.io/Strumenti-vari/ (non file://) e verifica l\'URI di reindirizzamento in Entra.');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-brands fa-microsoft"></i> Accedi con Microsoft';
+                }
             }
         }
 
@@ -5175,11 +5208,25 @@
             }
         }
 
-        // Init MSAL al caricamento
+        // Init MSAL al caricamento + gestione ritorno da loginRedirect
+        async function soprBoot() {
+            try {
+                await initSoprMsal();
+                if (soprMsalInstance) {
+                    const redirectResult = await soprMsalInstance.handleRedirectPromise();
+                    if (redirectResult && redirectResult.account) {
+                        soprAccount = redirectResult.account;
+                        soprUpdateAuthUI(true);
+                    }
+                }
+            } catch (e) {
+                console.error('soprBoot', e);
+            }
+        }
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initSoprMsal);
+            document.addEventListener('DOMContentLoaded', soprBoot);
         } else {
-            initSoprMsal();
+            soprBoot();
         }
     </script>
 
