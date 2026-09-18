@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0061)file:///C:/Users/angel/Downloads/Strumenti%20utili%20(4).html -->
+<!-- saved from url=(0055)https://angelotermocinque-rgb.github.io/Strumenti-vari/ -->
 <html lang="it" class=" idc0_343 cqcnsiwp irruwleb"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,21 +9,21 @@
     <link rel="icon" type="image/png" href="https://angelotermocinque-rgb.github.io/Strumenti-vari/favicon.png">
     
     <!-- FontAwesome per icone -->
-    <link rel="stylesheet" href="./Strumenti utili_files/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     <!-- pdf-lib per generazione e unione PDF -->
-    <script src="./Strumenti utili_files/pdf-lib.min.js.download" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <!-- pdf.js per anteprima visiva delle pagine -->
-    <script src="./Strumenti utili_files/pdf.min.js.download" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
     <!-- Word (docx) → HTML -->
-    <script src="./Strumenti utili_files/mammoth.browser.min.js.download" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <!-- Excel -->
-    <script src="./Strumenti utili_files/xlsx.full.min.js.download" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <!-- HTML → canvas / PDF (per Word/Excel) -->
-    <script src="./Strumenti utili_files/html2canvas.min.js.download" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="./Strumenti utili_files/jspdf.umd.min.js.download" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
         :root {
             --bg-light: #dcdcdc;
@@ -2042,7 +2042,7 @@
                 </h4>
                 <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:0.75rem; line-height:1.4;">
                     Percorso base: <code style="font-size:0.8rem;">Z:\CONDIVISA\Preventivi\02_CLIENTI</code><br>
-                    <span id="archiveBaseFolderStatus">La cartella base va selezionata <strong>una sola volta</strong> (poi resta memorizzata).</span>
+                    <span id="archiveBaseFolderStatus"><span style="color:var(--accent-green);"><i class="fa-solid fa-link"></i> Cartella base collegata e memorizzata. I salvataggi successivi non richiederanno di risceglierla.</span></span>
                 </p>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem;" class="archive-meta-grid">
                     <div class="iva-input-group">
@@ -3561,7 +3561,7 @@
                     const buf = await files[0].arrayBuffer();
                     const pdf = await PDFLib.PDFDocument.load(buf);
                     if (pdf.getPageCount() > 1) {
-                        processMasterPdfFile(files[0]);
+                        await processMasterPdfFile(files[0]);
                         return;
                     }
                 } catch (err) {
@@ -3569,48 +3569,39 @@
                 }
             }
 
-            // Più foto / file misti (immagini ± PDF) → costruisci PDF temporaneo e apri
-            // la stessa schermata di anteprima e smistamento pagine
+            // Più foto / file misti → PDF temporaneo + stessa modale di anteprima/smistamento
             const hasImages = files.some(f => f.type && f.type.startsWith('image/'));
             const hasMultiple = files.length >= 2;
-            if (hasMultiple && hasImages) {
+            const allPdf = files.every(f => (f.type === 'application/pdf') || /\.pdf$/i.test(f.name || ''));
+
+            if (hasMultiple && (hasImages || allPdf)) {
                 try {
                     await processMasterFromMixedFiles(files);
                     return;
                 } catch (err) {
-                    console.warn('Anteprima multi-foto non riuscita, uso assegnazione rapida', err);
+                    console.error('Anteprima multi-file non riuscita:', err);
+                    alert('Errore anteprima file: ' + (err && err.message ? err.message : err));
                 }
             }
 
-            // Più PDF → unisci e apri smistamento
-            const allPdf = files.every(f => f.type === 'application/pdf' || /\.pdf$/i.test(f.name));
-            if (hasMultiple && allPdf) {
-                try {
-                    await processMasterFromMixedFiles(files);
-                    return;
-                } catch (err) {
-                    console.warn('Unione PDF non riuscita, uso assegnazione rapida', err);
-                }
-            }
-
-            // Singolo file (immagine o PDF 1 pagina) → chiedi il box
+            // Singolo file (immagine o PDF 1 pagina) → scegli box
             showQuickAssignDialog(files);
         }
 
-        /**
-         * Costruisce un PDF multipagina da immagini e/o PDF, poi apre la modale
-         * di anteprima e smistamento (stessa UX del PDF multi-pagina).
-         */
         async function processMasterFromMixedFiles(files) {
+            if (typeof PDFLib === 'undefined') {
+                throw new Error('Libreria PDF non caricata. Controlla la connessione internet.');
+            }
             const pdfDoc = await PDFLib.PDFDocument.create();
             const names = [];
 
             for (const file of files) {
-                names.push(file.name);
+                names.push(file.name || 'file');
                 const arrayBuffer = await file.arrayBuffer();
                 const safeBuf = arrayBuffer.slice(0);
+                const isPdf = (file.type === 'application/pdf') || /\.pdf$/i.test(file.name || '');
 
-                if (file.type === 'application/pdf' || /\.pdf$/i.test(file.name)) {
+                if (isPdf) {
                     try {
                         const donor = await PDFLib.PDFDocument.load(safeBuf);
                         const copied = await pdfDoc.copyPages(donor, donor.getPageIndices());
@@ -3620,12 +3611,14 @@
                     }
                 } else if (file.type && file.type.startsWith('image/')) {
                     try {
-                        let jpegBuf = safeBuf;
+                        let jpegBuf;
                         try {
                             jpegBuf = await imageToCompressedJpegBytes(safeBuf, 0.92);
-                        } catch (_) {
-                            if (!file.type.includes('jpeg') && !file.type.includes('jpg')) {
-                                throw _;
+                        } catch (convErr) {
+                            if (file.type.includes('jpeg') || file.type.includes('jpg')) {
+                                jpegBuf = safeBuf;
+                            } else {
+                                throw convErr;
                             }
                         }
                         const emb = await pdfDoc.embedJpg(jpegBuf);
@@ -3641,7 +3634,6 @@
             if (pageCount < 1) {
                 throw new Error('Nessuna pagina generata dai file selezionati');
             }
-
             if (pageCount === 1 && files.length === 1) {
                 showQuickAssignDialog(files);
                 return;
@@ -3649,15 +3641,13 @@
 
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-            const label = names.length === 1
-                ? names[0]
-                : ('import_' + names.length + '_file.pdf');
+            const label = names.length === 1 ? names[0] : ('import_' + names.length + '_file.pdf');
             const tempFile = new File([blob], label, { type: 'application/pdf' });
 
             await processMasterPdfFile(tempFile);
             masterFileNames = names.slice();
             masterFileName = names.join(', ');
-            updateMultiPdfInfoBar();
+            if (typeof updateMultiPdfInfoBar === 'function') updateMultiPdfInfoBar();
         }
 
         function showQuickAssignDialog(files) {
@@ -5020,4 +5010,83 @@
                     });
                 }
                 document.body.appendChild(wrap);
-       
+                const canvas = await html2canvas(wrap, { scale: 2, backgroundColor: '#ffffff' });
+                document.body.removeChild(wrap);
+                const imgData = canvas.toDataURL('image/jpeg', 0.92);
+                const { jsPDF } = window.jspdf;
+                const landscape = canvas.width > canvas.height;
+                const pdf = new jsPDF({ orientation: landscape ? 'l' : 'p', unit: 'mm', format: 'a4' });
+                const pageW = pdf.internal.pageSize.getWidth();
+                const pageH = pdf.internal.pageSize.getHeight();
+                const margin = 8;
+                const usableW = pageW - margin * 2;
+                const imgW = usableW;
+                const imgH = (canvas.height * imgW) / canvas.width;
+                let heightLeft = imgH;
+                let position = margin;
+                pdf.addImage(imgData, 'JPEG', margin, position, imgW, imgH);
+                heightLeft -= (pageH - margin * 2);
+                while (heightLeft > 0) {
+                    position = margin - (imgH - heightLeft);
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', margin, position, imgW, imgH);
+                    heightLeft -= (pageH - margin * 2);
+                }
+                const base = (st.name || 'foglio').replace(/\.xlsx?$/i, '');
+                pdf.save(base + '.pdf');
+            } catch (err) {
+                console.error(err);
+                alert('Errore conversione Excel: ' + (err.message || err));
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Converti in PDF';
+            }
+        }
+
+        // ---- PDF → Excel ----
+        async function runPdf2Excel() {
+            const st = pdfToolState.pdf2excel;
+            if (!st.buffer) return;
+            const btn = document.getElementById('btn-pdf2excel');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Estraggo...';
+            try {
+                const pdfJs = await pdfjsLib.getDocument({ data: new Uint8Array(st.buffer.slice(0)) }).promise;
+                const rows = [];
+                for (let i = 1; i <= pdfJs.numPages; i++) {
+                    const page = await pdfJs.getPage(i);
+                    const content = await page.getTextContent();
+                    // Raggruppa per y approssimata
+                    const linesMap = {};
+                    content.items.forEach(it => {
+                        const y = Math.round(it.transform[5]);
+                        if (!linesMap[y]) linesMap[y] = [];
+                        linesMap[y].push(it.str);
+                    });
+                    const ys = Object.keys(linesMap).map(Number).sort((a, b) => b - a);
+                    ys.forEach(y => {
+                        const line = linesMap[y].join(' ').trim();
+                        if (line) rows.push([`Pag.${i}`, line]);
+                    });
+                    rows.push(['', '']);
+                }
+                const ws = XLSX.utils.aoa_to_sheet([['Pagina', 'Testo'], ...rows]);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Estratto');
+                const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                const base = (st.name || 'documento').replace(/\.pdf$/i, '');
+                downloadBlob(new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), base + '.xlsx');
+            } catch (err) {
+                console.error(err);
+                alert('Errore: ' + (err.message || err));
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-file-excel"></i> Scarica .xlsx';
+            }
+        }
+    </script>
+
+    </div><!-- /.page-wrap -->
+
+
+</body></html>
