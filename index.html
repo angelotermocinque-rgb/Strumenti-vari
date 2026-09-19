@@ -2051,7 +2051,7 @@
                     </div>
                     <div class="iva-input-group">
                         <label for="archiveProductType">Tipo prodotto</label>
-                        <select id="archiveProductType" style="width:100%; padding:0.65rem 0.75rem; font-size:1rem; border:1px solid var(--border-color); border-radius:6px; background:var(--input-bg); color:var(--text-main);" onchange="updateArchivePathPreview()">
+                        <select id="archiveProductType" style="width:100%; padding:0.65rem 0.75rem; font-size:1rem; border:1px solid var(--border-color); border-radius:6px; background:var(--input-bg); color:var(--text-main);" onchange="onProductTypeChange()">
                             <option value="">— Seleziona —</option>
                             <option value="CALDAIA">CALDAIA</option>
                             <option value="IBRIDA">IBRIDA</option>
@@ -2060,6 +2060,54 @@
                             <option value="SCALDABAGNO A GAS">SCALDABAGNO A GAS</option>
                         </select>
                     </div>
+                </div>
+
+                <!-- 3 slot impianti se CONDIZIONATORE → cartella tipo "CDZ MONO + DUAL" -->
+                <div id="condConfigPanel" style="display:none; margin-top:1rem; padding:1rem 1.1rem; background:var(--card-bg); border:1px solid var(--border-color); border-radius:8px; border-left:4px solid var(--accent-orange);">
+                    <h4 style="font-size:0.95rem; color:var(--text-main); margin:0 0 0.65rem; display:flex; align-items:center; gap:0.4rem;">
+                        <i class="fa-solid fa-snowflake" style="color:var(--accent-cyan);"></i> Impianti condizionatore (fino a 3)
+                    </h4>
+                    <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:0.85rem; line-height:1.4;">
+                        Scegli il tipo in ogni slot. Gli slot vuoti non vengono considerati. Esempio cartella: <code style="font-size:0.78rem;">CDZ MONO + DUAL</code>
+                    </p>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:0.75rem;">
+                        <div class="iva-input-group">
+                            <label for="condSlot1">Impianto 1</label>
+                            <select id="condSlot1" class="cond-slot" onchange="onCondSlotChange()" style="width:100%; padding:0.55rem 0.65rem; font-size:0.95rem; border:1px solid var(--border-color); border-radius:6px; background:var(--input-bg); color:var(--text-main);">
+                                <option value="">— Vuoto —</option>
+                                <option value="MONO">MONO SPLIT</option>
+                                <option value="DUAL">DUAL SPLIT</option>
+                                <option value="TRIAL">TRIAL SPLIT</option>
+                                <option value="QUADRI">QUADRI SPLIT</option>
+                                <option value="PENTA">PENTA SPLIT</option>
+                            </select>
+                        </div>
+                        <div class="iva-input-group">
+                            <label for="condSlot2">Impianto 2</label>
+                            <select id="condSlot2" class="cond-slot" onchange="onCondSlotChange()" style="width:100%; padding:0.55rem 0.65rem; font-size:0.95rem; border:1px solid var(--border-color); border-radius:6px; background:var(--input-bg); color:var(--text-main);">
+                                <option value="">— Vuoto —</option>
+                                <option value="MONO">MONO SPLIT</option>
+                                <option value="DUAL">DUAL SPLIT</option>
+                                <option value="TRIAL">TRIAL SPLIT</option>
+                                <option value="QUADRI">QUADRI SPLIT</option>
+                                <option value="PENTA">PENTA SPLIT</option>
+                            </select>
+                        </div>
+                        <div class="iva-input-group">
+                            <label for="condSlot3">Impianto 3</label>
+                            <select id="condSlot3" class="cond-slot" onchange="onCondSlotChange()" style="width:100%; padding:0.55rem 0.65rem; font-size:0.95rem; border:1px solid var(--border-color); border-radius:6px; background:var(--input-bg); color:var(--text-main);">
+                                <option value="">— Vuoto —</option>
+                                <option value="MONO">MONO SPLIT</option>
+                                <option value="DUAL">DUAL SPLIT</option>
+                                <option value="TRIAL">TRIAL SPLIT</option>
+                                <option value="QUADRI">QUADRI SPLIT</option>
+                                <option value="PENTA">PENTA SPLIT</option>
+                            </select>
+                        </div>
+                    </div>
+                    <p style="margin-top:0.85rem; font-size:0.9rem; color:var(--text-main);">
+                        Cartella prodotto: <strong id="condConfigPreview" style="color:var(--accent-orange);">— seleziona almeno un impianto —</strong>
+                    </p>
                 </div>
             </div>
 
@@ -2272,9 +2320,60 @@
             return '02_DDC';
         }
 
+        // --- Configurazione CONDIZIONATORE: 3 slot → nome cartella "CDZ MONO + DUAL" ---
+        function onProductTypeChange() {
+            const sel = document.getElementById('archiveProductType');
+            const panel = document.getElementById('condConfigPanel');
+            const isCond = sel && sel.value === 'CONDIZIONATORE';
+            if (panel) panel.style.display = isCond ? 'block' : 'none';
+            if (!isCond) {
+                ['condSlot1', 'condSlot2', 'condSlot3'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = '';
+                });
+                const prev = document.getElementById('condConfigPreview');
+                if (prev) prev.textContent = '— seleziona almeno un impianto —';
+            } else {
+                onCondSlotChange();
+            }
+            updateArchivePathPreview();
+        }
+
+        function getCondSlotValues() {
+            return ['condSlot1', 'condSlot2', 'condSlot3']
+                .map(id => (document.getElementById(id)?.value || '').trim())
+                .filter(v => v !== '');
+        }
+
+        /** Es. "CDZ MONO", "CDZ MONO + DUAL", "CDZ MONO + MONO + TRIAL" oppure null. */
+        function buildCdzFolderName() {
+            const parts = getCondSlotValues();
+            if (!parts.length) return null;
+            return 'CDZ ' + parts.join(' + ');
+        }
+
+        function onCondSlotChange() {
+            const name = buildCdzFolderName();
+            const prev = document.getElementById('condConfigPreview');
+            if (prev) {
+                prev.textContent = name || '— seleziona almeno un impianto —';
+                prev.style.color = name ? 'var(--accent-orange)' : 'var(--text-muted)';
+            }
+            updateArchivePathPreview();
+        }
+
+        /** Nome cartella prodotto effettivo (per path e salvataggio). */
+        function getProductFolderName() {
+            const raw = (document.getElementById('archiveProductType')?.value || '').trim();
+            if (raw === 'CONDIZIONATORE') {
+                return buildCdzFolderName() || '';
+            }
+            return raw;
+        }
+
         function updateArchivePathPreview() {
             const client = (document.getElementById('archiveClientName')?.value || '').trim() || 'Nome cliente';
-            const product = (document.getElementById('archiveProductType')?.value || '').trim() || 'TIPO PRODOTTO';
+            const product = getProductFolderName() || (document.getElementById('archiveProductType')?.value || '').trim() || 'TIPO PRODOTTO';
             const el = document.getElementById('archivePathPreview');
             if (!el) return;
             const fin = hasFinanziamentoTrigger();
@@ -2940,15 +3039,20 @@
         async function saveAllDocsToFolder() {
             // Validazione campi prima del messaggio (evita popup inutili)
             const clientRaw = (document.getElementById('archiveClientName')?.value || '').trim();
-            const productRaw = (document.getElementById('archiveProductType')?.value || '').trim();
+            const productSel = (document.getElementById('archiveProductType')?.value || '').trim();
             if (!clientRaw) {
                 alert('Inserisci il nome del cliente prima di salvare.');
                 document.getElementById('archiveClientName')?.focus();
                 return;
             }
-            if (!productRaw) {
+            if (!productSel) {
                 alert('Seleziona il tipo prodotto prima di salvare.');
                 document.getElementById('archiveProductType')?.focus();
+                return;
+            }
+            if (productSel === 'CONDIZIONATORE' && !buildCdzFolderName()) {
+                alert('Seleziona almeno un impianto (slot 1–3) per il condizionatore.');
+                document.getElementById('condSlot1')?.focus();
                 return;
             }
 
@@ -2968,16 +3072,22 @@
             const hint = document.getElementById('saveFolderHint');
 
             const clientRaw = (document.getElementById('archiveClientName')?.value || '').trim();
-            const productRaw = (document.getElementById('archiveProductType')?.value || '').trim();
+            const productSel = (document.getElementById('archiveProductType')?.value || '').trim();
+            const productRaw = getProductFolderName();
 
             if (!clientRaw) {
                 alert('Inserisci il nome del cliente prima di salvare.');
                 document.getElementById('archiveClientName')?.focus();
                 return;
             }
-            if (!productRaw) {
+            if (!productSel) {
                 alert('Seleziona il tipo prodotto prima di salvare.');
                 document.getElementById('archiveProductType')?.focus();
+                return;
+            }
+            if (productSel === 'CONDIZIONATORE' && !productRaw) {
+                alert('Seleziona almeno un impianto (slot 1–3) per il condizionatore.');
+                document.getElementById('condSlot1')?.focus();
                 return;
             }
 
