@@ -3662,14 +3662,30 @@
             if (files && files.length) routeImportedFiles(Array.from(files));
         }
 
+        function isPdfFile(f) {
+            if (!f) return false;
+            const t = (f.type || '').toLowerCase();
+            const n = (f.name || '').toLowerCase();
+            return t === 'application/pdf' || t === 'application/x-pdf' || /\.pdf$/i.test(n);
+        }
+
+        function isImageFile(f) {
+            if (!f) return false;
+            const t = (f.type || '').toLowerCase();
+            const n = (f.name || '').toLowerCase();
+            if (t.startsWith('image/')) return true;
+            // MIME assente (frequente su mobile / drag&drop): usa estensione
+            return /\.(jpe?g|png|webp|bmp|gif|heic|heif|tiff?)$/i.test(n);
+        }
+
         async function routeImportedFiles(files) {
             if (!files || !files.length) return;
 
             // Un solo PDF multi-pagina → smistamento con anteprima
-            if (files.length === 1 && (files[0].type === 'application/pdf' || /\.pdf$/i.test(files[0].name))) {
+            if (files.length === 1 && isPdfFile(files[0])) {
                 try {
                     const buf = await files[0].arrayBuffer();
-                    const pdf = await PDFLib.PDFDocument.load(buf);
+                    const pdf = await PDFLib.PDFDocument.load(buf.slice(0));
                     if (pdf.getPageCount() > 1) {
                         await processMasterPdfFile(files[0]);
                         return;
@@ -3679,18 +3695,19 @@
                 }
             }
 
-            // Più foto / file misti → PDF temporaneo + stessa modale di anteprima/smistamento
-            const hasImages = files.some(f => f.type && f.type.startsWith('image/'));
-            const hasMultiple = files.length >= 2;
-            const allPdf = files.every(f => (f.type === 'application/pdf') || /\.pdf$/i.test(f.name || ''));
-
-            if (hasMultiple && (hasImages || allPdf)) {
+            // Due o più file (foto e/o PDF) → sempre anteprima + smistamento pagine
+            // (prima: solo se hasImages||allPdf e MIME corretto → a volte saltava alla dialog Anagrafica)
+            const usable = files.filter(f => isPdfFile(f) || isImageFile(f));
+            if (files.length >= 2 && usable.length >= 1) {
                 try {
-                    await processMasterFromMixedFiles(files);
+                    // Usa tutti i file utilizzabili; se qualcuno non è img/pdf viene ignorato in processMasterFromMixedFiles
+                    await processMasterFromMixedFiles(usable.length === files.length ? files : usable);
                     return;
                 } catch (err) {
                     console.error('Anteprima multi-file non riuscita:', err);
                     alert('Errore anteprima file: ' + (err && err.message ? err.message : err));
+                    // Non aprire la dialog rapida dopo un errore: evita confusione con "Anagrafica"
+                    return;
                 }
             }
 
@@ -3709,7 +3726,8 @@
                 names.push(file.name || 'file');
                 const arrayBuffer = await file.arrayBuffer();
                 const safeBuf = arrayBuffer.slice(0);
-                const isPdf = (file.type === 'application/pdf') || /\.pdf$/i.test(file.name || '');
+                const isPdf = isPdfFile(file);
+                const isImg = isImageFile(file);
 
                 if (isPdf) {
                     try {
@@ -3719,13 +3737,15 @@
                     } catch (e) {
                         console.warn('Salto PDF non leggibile:', file.name, e);
                     }
-                } else if (file.type && file.type.startsWith('image/')) {
+                } else if (isImg) {
                     try {
                         let jpegBuf;
                         try {
                             jpegBuf = await imageToCompressedJpegBytes(safeBuf, 0.92);
                         } catch (convErr) {
-                            if (file.type.includes('jpeg') || file.type.includes('jpg')) {
+                            const t = (file.type || '').toLowerCase();
+                            const n = (file.name || '').toLowerCase();
+                            if (t.includes('jpeg') || t.includes('jpg') || /\.jpe?g$/i.test(n)) {
                                 jpegBuf = safeBuf;
                             } else {
                                 throw convErr;
