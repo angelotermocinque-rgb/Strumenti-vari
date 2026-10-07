@@ -9,21 +9,21 @@
     <link rel="icon" type="image/png" href="https://angelotermocinque-rgb.github.io/Strumenti-vari/favicon.png">
     
     <!-- FontAwesome per icone -->
-    <link rel="stylesheet" href="./Strumenti utili_files/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     <!-- pdf-lib per generazione e unione PDF -->
-    <script src="./Strumenti utili_files/pdf-lib.min.js.download" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <!-- pdf.js per anteprima visiva delle pagine -->
-    <script src="./Strumenti utili_files/pdf.min.js.download" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
     <!-- Word (docx) → HTML -->
-    <script src="./Strumenti utili_files/mammoth.browser.min.js.download" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <!-- Excel -->
-    <script src="./Strumenti utili_files/xlsx.full.min.js.download" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <!-- HTML → canvas / PDF (per Word/Excel) -->
-    <script src="./Strumenti utili_files/html2canvas.min.js.download" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="./Strumenti utili_files/jspdf.umd.min.js.download" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
         :root {
             --bg-light: #dcdcdc;
@@ -975,6 +975,66 @@
             line-height: 1.45;
         }
 
+        .iva-split-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+        @media (min-width: 640px) {
+            .iva-split-grid {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+        }
+        .iva-split-box {
+            border-radius: 8px;
+            padding: 0.9rem 1rem;
+            border: 1px solid var(--border-color);
+            background: var(--card-inner-bg);
+        }
+        .iva-split-box .split-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-muted);
+            margin-bottom: 0.35rem;
+            line-height: 1.3;
+        }
+        .iva-split-box .split-value {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .iva-split-box.split-10 {
+            border-color: #6ee7b7;
+            background: #ecfdf5;
+        }
+        .iva-split-box.split-10 .split-value {
+            color: #065f46;
+        }
+        .iva-split-box.split-22 {
+            border-color: #fca5a5;
+            background: #fef2f2;
+        }
+        .iva-split-box.split-22 .split-value {
+            color: #991b1b;
+        }
+        body.dark-mode .iva-split-box.split-10 {
+            background: #064e3b;
+            border-color: #059669;
+        }
+        body.dark-mode .iva-split-box.split-10 .split-value {
+            color: #a7f3d0;
+        }
+        body.dark-mode .iva-split-box.split-22 {
+            background: #7f1d1d;
+            border-color: #dc2626;
+        }
+        body.dark-mode .iva-split-box.split-22 .split-value {
+            color: #fecaca;
+        }
+
         body.dark-mode .doc-box:hover,
         body.dark-mode .doc-box.dragover {
             background: #1a2a33;
@@ -1465,23 +1525,25 @@
         </div>
         <div class="card-body">
             <p style="margin-bottom: 1.25rem; color: var(--text-muted); font-size: 0.95rem;">
-                Calcolo automatico dell’aliquota IVA al 10% e 22% per caldaie, condizionatori e altri beni significativi.
+                Inserisci il <strong>totale ivato del preventivo</strong> e il <strong>costo di acquisto</strong> del bene significativo (senza mark-up). Il calcolatore ricava imponibile al 10%, al 22% e il totale imponibile.
             </p>
 
             <div class="iva-form">
                 <div class="iva-input-group">
-                    <label for="valoreBene">Valore Bene Significativo (es. Caldaia / Condizionatore)</label>
+                    <label for="totaleIvato">Totale ivato del preventivo</label>
                     <div class="iva-input-wrapper">
-                        <input type="number" id="valoreBene" step="0.01" placeholder="0.00" oninput="calcolaIVA()">
+                        <input type="number" id="totaleIvato" step="0.01" min="0" placeholder="0.00" oninput="calcolaIVA()">
                         <span class="iva-currency">€</span>
                     </div>
+                    <span style="font-size:0.78rem;color:var(--text-muted);margin-top:0.2rem;">Importo finale che paga il cliente (IVA inclusa)</span>
                 </div>
                 <div class="iva-input-group">
-                    <label for="valoreManodopera">Valore Manodopera e Altri Materiali</label>
+                    <label for="costoBene">Valore di acquisto del bene significativo</label>
                     <div class="iva-input-wrapper">
-                        <input type="number" id="valoreManodopera" step="0.01" placeholder="0.00" oninput="calcolaIVA()">
+                        <input type="number" id="costoBene" step="0.01" min="0" placeholder="0.00" oninput="calcolaIVA()">
                         <span class="iva-currency">€</span>
                     </div>
+                    <span style="font-size:0.78rem;color:var(--text-muted);margin-top:0.2rem;">Costo di acquisto/produzione (IVA esclusa), senza il tuo ricarico</span>
                 </div>
             </div>
 
@@ -1509,6 +1571,21 @@
                         </tr>
                     </tbody>
                 </table>
+
+                <div class="iva-split-grid">
+                    <div class="iva-split-box split-10">
+                        <div class="split-label">Prestazione al netto del bene (IVA 10%)</div>
+                        <div class="split-value" id="valPrestazione">0,00 €</div>
+                    </div>
+                    <div class="iva-split-box split-10">
+                        <div class="split-label">Bene significativo IVA 10%</div>
+                        <div class="split-value" id="valBene10">0,00 €</div>
+                    </div>
+                    <div class="iva-split-box split-22">
+                        <div class="split-label">Bene significativo IVA 22%</div>
+                        <div class="split-value" id="valBene22">0,00 €</div>
+                    </div>
+                </div>
 
                 <div class="iva-summary">
                     <div class="iva-summary-item">
@@ -4408,52 +4485,93 @@
         }
 
         function calcolaIVA() {
-            const bene = parseFloat(document.getElementById('valoreBene').value) || 0;
-            const manodopera = parseFloat(document.getElementById('valoreManodopera').value) || 0;
+            const T = parseFloat(document.getElementById('totaleIvato').value) || 0;
+            const B = parseFloat(document.getElementById('costoBene').value) || 0;
             const resultsDiv = document.getElementById('ivaResults');
 
-            if (bene <= 0 && manodopera <= 0) {
+            if (T <= 0) {
                 resultsDiv.style.display = 'none';
                 return;
             }
 
             resultsDiv.style.display = 'block';
 
-            const totaleImponibile = bene + manodopera;
-            const sogliaMeta = totaleImponibile / 2;
-
-            let imp10 = 0;
-            let imp22 = 0;
-
             const caseBadge = document.getElementById('caseBadge');
             const explanNote = document.getElementById('explanNote');
 
-            if (bene <= sogliaMeta) {
-                // Caso 1: il bene è ≤ 50% del totale
-                imp10 = totaleImponibile;
-                imp22 = 0;
-                caseBadge.className = "iva-case-badge iva-case-1";
-                caseBadge.textContent = "CASO 1: Bene Significativo ≤ 50% del Totale";
-                explanNote.textContent = "Poiché il valore del bene significativo non supera il 50% dell'importo totale della prestazione, l'intero imponibile beneficia dell'IVA agevolata al 10%.";
-            } else {
-                // Caso 2: il bene è > 50% del totale
-                imp10 = manodopera * 2;
-                imp22 = totaleImponibile - imp10;
-                caseBadge.className = "iva-case-badge iva-case-2";
-                caseBadge.textContent = "CASO 2: Bene Significativo > 50% del Totale";
-                explanNote.innerHTML = `Il valore del bene supera il 50% del totale. L'IVA al 10% si applica sulla manodopera/materiali (${formatCurrency(manodopera)}) e su una pari quota del bene (${formatCurrency(manodopera)}). La parte rimanente del bene (${formatCurrency(imp22)}) sconta l'IVA ordinaria al 22%.`;
+            // Ipotesi tutto al 10%
+            const V_all10 = T / 1.10;
+
+            // Formula mista derivata da: T = 2*C*1.10 + (B-C)*1.22  con C = V - B
+            // → T = 0.98*V + 0.24*B  →  V = (T - 0.24*B) / 0.98
+            let isMixed = false;
+            let V, C, imp10, imp22;
+
+            if (B > 0) {
+                const V_mixed = (T - 0.24 * B) / 0.98;
+                if (V_mixed > B && V_mixed <= 2 * B + 0.02 && B > V_mixed / 2) {
+                    isMixed = true;
+                    V = V_mixed;
+                    C = V - B;
+                    imp10 = 2 * C;
+                    imp22 = B - C;
+                }
             }
 
-            const iva10Val = imp10 * 0.10;
-            const iva22Val = imp22 * 0.22;
-            const totIVAVal = iva10Val + iva22Val;
-            const totFatturaVal = totaleImponibile + totIVAVal;
+            if (!isMixed) {
+                V = V_all10;
+                C = Math.max(0, V - B);
+                imp10 = V;
+                imp22 = 0;
+
+                if (B > V / 2 + 0.01) {
+                    caseBadge.className = "iva-case-badge iva-case-2";
+                    caseBadge.textContent = "ATTENZIONE: dati potenzialmente inconsistenti";
+                    explanNote.innerHTML = "Con questi valori il costo del bene supera il 50% del totale imponibile ma la formula mista non restituisce un risultato coerente. Verifica che il <strong>costo di acquisto</strong> non sia troppo alto rispetto al totale ivato.";
+                } else {
+                    caseBadge.className = "iva-case-badge iva-case-1";
+                    caseBadge.textContent = "CASO 1: tutto al 10% (bene ≤ 50%)";
+                    explanNote.textContent = "Il valore del bene significativo non supera il 50% del totale imponibile: l'intero importo beneficia dell'IVA agevolata al 10%.";
+                }
+            } else {
+                caseBadge.className = "iva-case-badge iva-case-2";
+                caseBadge.textContent = "CASO 2: IVA mista 10% + 22%";
+                explanNote.innerHTML = `Valore netto prestazione (C) = ${formatCurrency(V)} − ${formatCurrency(B)} = ${formatCurrency(C)}.<br>
+                    Imponibile al 10% = 2 × C = ${formatCurrency(imp10)}.<br>
+                    Imponibile al 22% = B − C = ${formatCurrency(imp22)}.`;
+            }
+
+            // Arrotondamento commerciale a 2 decimali
+            V = Math.round(V * 100) / 100;
+            imp10 = Math.round(imp10 * 100) / 100;
+            imp22 = Math.round(Math.max(0, imp22) * 100) / 100;
+
+            const iva10Val = Math.round(imp10 * 0.10 * 100) / 100;
+            const iva22Val = Math.round(imp22 * 0.22 * 100) / 100;
+            const totIVAVal = Math.round((iva10Val + iva22Val) * 100) / 100;
+            const totFatturaVal = Math.round((V + totIVAVal) * 100) / 100;
+
+            // Quote dettagliate
+            const prestazioneNetto = Math.round(Math.max(0, C) * 100) / 100;
+            let bene10, bene22;
+            if (isMixed) {
+                bene10 = Math.round(C * 100) / 100;   // pari alla prestazione
+                bene22 = imp22;
+            } else {
+                // Tutto al 10%: intero valore del bene (se presente) va al 10%
+                bene10 = Math.round(Math.min(B, V) * 100) / 100;
+                bene22 = 0;
+            }
+
+            document.getElementById('valPrestazione').textContent = formatCurrency(prestazioneNetto);
+            document.getElementById('valBene10').textContent = formatCurrency(bene10);
+            document.getElementById('valBene22').textContent = formatCurrency(bene22);
 
             document.getElementById('imp10').textContent = formatCurrency(imp10);
             document.getElementById('iva10').textContent = formatCurrency(iva10Val);
             document.getElementById('imp22').textContent = formatCurrency(imp22);
             document.getElementById('iva22').textContent = formatCurrency(iva22Val);
-            document.getElementById('totImponibile').textContent = formatCurrency(totaleImponibile);
+            document.getElementById('totImponibile').textContent = formatCurrency(V);
             document.getElementById('totIVA').textContent = formatCurrency(totIVAVal);
             document.getElementById('totFattura').textContent = formatCurrency(totFatturaVal);
         }
