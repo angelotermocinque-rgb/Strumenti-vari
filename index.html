@@ -61,6 +61,10 @@
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
 
+        html {
+            color-scheme: light dark;
+        }
+
         body {
             background-color: var(--bg-light);
             color: var(--text-main);
@@ -68,6 +72,15 @@
             padding: 0;
             min-height: 100vh;
             padding-top: 52px;
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+
+        /* Transizione fluida giorno/notte su superfici principali */
+        .page-wrap, header, .tool-card, .card-body, .card-header,
+        input, select, textarea, button, .import-zone, .doc-box,
+        .pdf-drop, .pdf-page-card, .top-nav, .theme-toggle-wrap,
+        .theme-label, .btn-help-user, .modal-help-card {
+            transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
         }
 
         .page-wrap {
@@ -240,7 +253,7 @@
             right: 0;
             bottom: 0;
             background-color: #ccc;
-            transition: 0.3s;
+            transition: background-color 0.4s ease, box-shadow 0.4s ease;
             border-radius: 32px;
         }
 
@@ -252,7 +265,7 @@
             left: 3px;
             bottom: 3px;
             background-color: white;
-            transition: 0.3s;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease;
             border-radius: 50%;
             box-shadow: 0 1px 3px rgba(0,0,0,0.25);
         }
@@ -293,6 +306,99 @@
         .theme-switch input:checked + .theme-slider .icon-moon {
             opacity: 1;
         }
+
+
+        .btn-help-user {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.75rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+        }
+        .btn-help-user:hover {
+            color: var(--text-main);
+            border-color: var(--accent-orange);
+        }
+        .modal-help {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(3px);
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 24px 12px;
+            overflow-y: auto;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .modal-help.open {
+            display: flex;
+            opacity: 1;
+        }
+        .modal-help-card {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border-radius: 12px;
+            max-width: 540px;
+            width: 100%;
+            margin: 48px auto;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            transform: translateY(8px);
+            transition: transform 0.35s ease, background-color 0.4s ease;
+        }
+        .modal-help.open .modal-help-card {
+            transform: translateY(0);
+        }
+        .modal-help-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .modal-help-head h2 {
+            font-size: 1.15rem;
+            margin: 0;
+            color: var(--text-main);
+        }
+        .modal-help-body {
+            padding: 18px 20px;
+            font-size: 0.95rem;
+            line-height: 1.55;
+            color: var(--text-muted);
+        }
+        .modal-help-body h3 {
+            font-size: 0.95rem;
+            color: var(--text-main);
+            margin: 14px 0 6px;
+        }
+        .modal-help-body p { margin-bottom: 8px; }
+        .modal-help-foot {
+            padding: 12px 20px 18px;
+        }
+        .modal-help-foot button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: var(--accent-orange);
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+        .modal-help-foot button:hover { background: var(--accent-orange-hover); }
 
         @media (max-width: 700px) {
             .top-nav-inner {
@@ -1231,6 +1337,230 @@
             .pdf-page-card .pg-img-wrap { height: 220px !important; }
             .archive-meta-grid { grid-template-columns: 1fr !important; }
         }
+    
+        /* ===== Uniformità estetica globale ===== */
+        :root {
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --control-h: 42px;
+            --focus-ring: 0 0 0 3px rgba(242, 101, 34, 0.22);
+        }
+
+        header {
+            border-bottom-width: 1px;
+            border-bottom-color: var(--border-color);
+            padding-bottom: 1.25rem;
+        }
+
+        header h1 {
+            font-size: 1.85rem;
+            letter-spacing: -0.02em;
+            font-weight: 700;
+        }
+
+        .btn-help-user {
+            border-radius: var(--radius-md);
+            height: 36px;
+            padding: 0 0.85rem;
+            font-size: 0.84rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            box-shadow: none;
+        }
+        .btn-help-user:hover {
+            background: var(--hover-bg);
+            color: var(--text-main);
+            border-color: var(--accent-orange);
+        }
+
+        .theme-slider {
+            background-color: #c5c9ce;
+        }
+
+        .tool-card {
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            background: var(--card-bg);
+            box-shadow: var(--shadow);
+        }
+        .tool-card + .tool-card {
+            margin-top: 1rem;
+        }
+        .card-header {
+            padding: 1rem 1.15rem;
+            background: var(--card-bg);
+            border-bottom: 1px solid transparent;
+        }
+        .tool-card.active .card-header {
+            border-bottom-color: var(--border-color);
+            background: var(--card-inner-bg);
+        }
+        .card-header h2 {
+            font-size: 1.05rem;
+            font-weight: 650;
+            letter-spacing: -0.01em;
+        }
+        .card-body {
+            padding: 1.15rem 1.15rem 1.35rem;
+            background: var(--card-bg);
+        }
+
+        input[type="number"],
+        input[type="text"],
+        input[type="email"],
+        input[type="search"],
+        input[type="password"],
+        select,
+        textarea {
+            border-radius: var(--radius-md) !important;
+            border: 1px solid var(--border-color) !important;
+            background: var(--input-bg) !important;
+            color: var(--text-main) !important;
+            min-height: var(--control-h);
+            padding: 0.55rem 0.85rem !important;
+            font-size: 0.95rem !important;
+            box-shadow: none;
+        }
+        input[type="number"]:focus,
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="search"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none !important;
+            border-color: var(--accent-orange) !important;
+            box-shadow: var(--focus-ring) !important;
+        }
+
+        .btn-action,
+        button.btn-action,
+        .modal-help-foot button {
+            border-radius: var(--radius-md) !important;
+            min-height: 42px;
+            padding: 0.65rem 1.1rem !important;
+            font-weight: 600 !important;
+            font-size: 0.92rem !important;
+            letter-spacing: 0.01em;
+            border: none;
+            box-shadow: none;
+        }
+        .btn-action {
+            background: var(--accent-orange) !important;
+            color: #fff !important;
+        }
+        .btn-action:hover:not(:disabled) {
+            background: var(--accent-orange-hover) !important;
+        }
+        .btn-action:disabled {
+            opacity: 0.55;
+        }
+
+        .btn-box-action {
+            border-radius: var(--radius-sm) !important;
+            border: 1px solid var(--border-color) !important;
+            background: var(--card-inner-bg) !important;
+            color: var(--text-main) !important;
+            font-weight: 600;
+            min-height: 34px;
+            padding: 0.35rem 0.7rem !important;
+        }
+        .btn-box-action:hover {
+            border-color: var(--accent-orange) !important;
+            color: var(--accent-orange) !important;
+            background: var(--hover-bg) !important;
+        }
+
+        .import-zone,
+        .doc-box,
+        .pdf-drop {
+            border-radius: var(--radius-md) !important;
+            border-style: dashed !important;
+            border-width: 1.5px !important;
+            border-color: var(--border-color) !important;
+            background: var(--card-inner-bg) !important;
+            transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+        }
+        .import-zone:hover,
+        .import-zone.dragover,
+        .doc-box:hover,
+        .doc-box.dragover,
+        .pdf-drop:hover,
+        .pdf-drop.dragover {
+            border-color: var(--accent-orange) !important;
+            background: var(--hover-bg) !important;
+        }
+        .doc-box.has-file {
+            border-style: solid !important;
+            border-color: var(--accent-orange) !important;
+        }
+
+        .doc-box .file-tag,
+        .file-tag {
+            border-radius: var(--radius-sm) !important;
+            background: var(--card-bg) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-main) !important;
+        }
+
+        .pdf-page-card {
+            border-radius: var(--radius-md) !important;
+            border: 1px solid var(--border-color) !important;
+            background: var(--card-bg) !important;
+            overflow: hidden;
+        }
+
+        .modal-help-card {
+            border-radius: var(--radius-lg) !important;
+            border: 1px solid var(--border-color);
+        }
+        .modal-help-head {
+            background: var(--card-inner-bg);
+        }
+        .modal-help-head h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+        .modal-help-body h3 {
+            color: var(--text-main);
+            font-weight: 650;
+            margin-top: 1rem;
+        }
+        .modal-help-body h3:first-child {
+            margin-top: 0;
+        }
+
+        /* Label form più coerenti */
+        label {
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.8rem;
+            letter-spacing: 0.02em;
+        }
+
+        /* Piccoli controlli secondari */
+        .clear-btn,
+        button.clear-btn {
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-muted);
+        }
+
+        /* Checkbox / radio accent */
+        input[type="checkbox"],
+        input[type="radio"] {
+            accent-color: var(--accent-orange);
+        }
+
+        /* Scrollbar discreta */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-color) transparent;
+        }
+
     </style>
 </head>
 <body>
@@ -1241,6 +1571,9 @@
             <h1><i class="fa-solid fa-fire-flame-curved"></i> Strumenti utili</h1>
         </div>
         <div class="theme-toggle-wrap" title="Modalità scura">
+            <button type="button" class="btn-help-user" id="btnHelpUser" title="Come usare gli strumenti">
+                <i class="fa-solid fa-circle-info"></i> Guida
+            </button>
             <span class="theme-label"><i class="fa-solid fa-sun"></i></span>
             <label class="theme-switch" title="Attiva / disattiva modalità scura">
                 <input type="checkbox" id="darkModeToggle">
@@ -5348,6 +5681,42 @@
 
     </div><!-- /.page-wrap -->
 
+<div class="modal-help" id="modalHelpUser">
+  <div class="modal-help-card">
+    <div class="modal-help-head">
+      <h2><i class="fa-solid fa-circle-info" style="color:var(--accent-orange)"></i> Come usare Strumenti utili</h2>
+      <button type="button" id="btnCloseHelpUser" style="border:none;background:transparent;font-size:1.5rem;line-height:1;cursor:pointer;color:var(--text-muted)">&times;</button>
+    </div>
+        <div class="modal-help-body">
+      <p>Questa pagina raccoglie diversi strumenti pratici per il lavoro quotidiano in Termocinque. Apri la sezione che ti serve dalla lista o dalle card.</p>
+      <h3>Calcoli e conversioni</h3>
+      <p>Usa le sezioni dedicate (temperatura, energia, volume, IVA, ecc.) per ottenere risultati rapidi senza fogli di calcolo esterni.</p>
+      <h3>Gestione PDF e documenti</h3>
+      <p>Puoi unire, dividere, comprimere, ruotare pagine, convertire Word/Excel in PDF e viceversa. Carica i file nelle aree indicate e segui i pulsanti di azione.</p>
+      <h3>Archiviazione e pratiche</h3>
+      <p>Gli strumenti legati alle pratiche ti aiutano a organizzare e preparare i documenti. Segui le indicazioni a schermo per ogni passaggio.</p>
+      <h3>Modalità notte</h3>
+      <p>Lo switch in alto a destra attiva il tema scuro, la preferenza viene salvata sul dispositivo.</p>
+    </div>
+    <div class="modal-help-foot">
+      <button type="button" id="btnCloseHelpUser2">Ho capito</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var modal = document.getElementById('modalHelpUser');
+  function openHelp(){ if(!modal) return; modal.classList.add('open'); modal.style.display='flex'; requestAnimationFrame(function(){ modal.style.opacity='1'; }); }
+  function closeHelp(){ if(!modal) return; modal.style.opacity='0'; setTimeout(function(){ modal.classList.remove('open'); modal.style.display='none'; }, 280); }
+  var b = document.getElementById('btnHelpUser');
+  if (b) b.addEventListener('click', openHelp);
+  var c1 = document.getElementById('btnCloseHelpUser');
+  var c2 = document.getElementById('btnCloseHelpUser2');
+  if (c1) c1.addEventListener('click', closeHelp);
+  if (c2) c2.addEventListener('click', closeHelp);
+  if (modal) modal.addEventListener('click', function(e){ if (e.target === modal) closeHelp(); });
+})();
+</script>
 
-
-</body></html>
+</body>
+</html>
